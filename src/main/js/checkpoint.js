@@ -1,0 +1,271 @@
+angular.module('checkpoint', ['config'])
+    .factory('fetchAccountMetadata', ['$http', 'config', 'topicRegistry', FetchAccountMetadata])
+    .factory('activeUserHasPermission', ['fetchAccountMetadata', 'topicRegistry', '$http', 'config', ActiveUserHasPermission])
+    .directive('checkpointPermission', CheckpointHasDirectiveFactory)
+    .directive('isAuthenticated', IsAuthenticatedDirectiveFactory)
+    .directive('isUnauthenticated', IsUnauthenticatedDirectiveFactory)
+    .directive('authenticatedWithRealm', AuthenticatedWithRealmDirectiveFactory)
+    .controller('SigninController', ['$scope', '$http', '$location', 'config', 'topicMessageDispatcher', SigninController])
+    .controller('AccountMetadataController', ['$scope', '$location', '$routeParams', 'config', 'topicRegistry', 'fetchAccountMetadata', AccountMetadataController])
+    .config(['$routeProvider', function ($routeProvider) {
+        $routeProvider
+            .when('/signin', {templateUrl: 'partials/checkpoint/signin.html', controller: SigninController})
+            .when('/:locale/signin', {templateUrl: 'partials/checkpoint/signin.html', controller: SigninController})
+    }]);
+
+function SignoutController($scope, $http, topicMessageDispatcher, config) {
+    $scope.submit = function () {
+        var onSuccess = function () {
+            topicMessageDispatcher.fire('checkpoint.signout', 'ok');
+        };
+
+        $http.delete((config.baseUri || '') + 'api/checkpoint', {withCredentials: true}).success(onSuccess);
+    }
+}
+SignoutController.$inject = ['$scope', '$http', 'topicMessageDispatcher', 'config'];
+
+function SigninController($scope, $http, $location, config, topicMessageDispatcher) {
+    var self = this;
+
+    $scope.submit = function () {
+        var onSuccess = function () {
+            topicMessageDispatcher.fire('checkpoint.signin', 'ok');
+            $location.path(config.onSigninSuccessTarget || config.redirectUri || '/');
+            config.onSigninSuccessTarget = undefined;
+        };
+
+        var onError = function (payload, status) {
+            var toViolations = function (payload) {
+                return Object.keys(payload).map(function (it) {
+                    return {context: it, cause: payload[it][0]}
+                });
+            };
+
+            self.status = status;
+            self.payload = payload;
+            if (status == 412) $scope.violations = toViolations(payload);
+        };
+
+        $http.post((config.baseUri || '') + 'api/checkpoint', {
+            username: $scope.username,
+            password: $scope.password,
+            rememberMe: $scope.rememberMe,
+            namespace: config.namespace
+        }, {
+            withCredentials: true
+        }).success(onSuccess).error(onError);
+    };
+
+    $scope.rejected = function () {
+        return self.status == 412;
+    };
+}
+
+function FetchAccountMetadata($http, config, topicRegistry) {
+    var cache, cached;
+
+    var clearCache = function () {
+        cache = {};
+        cached = false;
+    };
+    clearCache();
+
+    topicRegistry.subscribe('checkpoint.signin', clearCache);
+    topicRegistry.subscribe('checkpoint.signout', clearCache);
+
+    var usecase = function (it) {
+        var onSuccess = function (payload) {
+            cached = true;
+            cache.payload = payload;
+            it.ok(payload);
+        };
+        var onError = function (payload, status) {
+            cached = true;
+            cache.payload = payload;
+            cache.status = status;
+            it.unauthorized();
+        };
+
+        if (!cached) {
+            var path = config.baseUri || '';
+            $http.get(path + 'api/account/metadata', {
+                withCredentials: true,
+                headers: {
+                    'X-Namespace': config.namespace
+                }
+            }).success(onSuccess).error(onError);
+        } else {
+            !cache.status ? onSuccess(cache.payload) : onError(cache.payload, cache.status);
+        }
+    };
+
+    return  usecase
+}
+
+function AccountMetadataController($scope, $location, $routeParams, config, topicRegistry, fetchAccountMetadata) {
+    var self = this;
+
+    var init = function () {
+        fetchAccountMetadata({
+            unauthorized: function () {
+                self.status = 'unauthorized';
+            },
+            ok: function (it) {
+                self.status = 'ok';
+                $scope.metadata = it;
+            }
+        });
+    };
+
+    $scope.unauthorized = function () {
+        return self.status == 'unauthorized';
+    };
+
+    $scope.authorized = function () {
+        return self.status == 'ok';
+    };
+
+    [
+        {topic: 'app.start', command: init},
+        {topic: 'checkpoint.signin', command: init},
+        {topic: 'checkpoint.signout', command: init},
+        {topic: 'checkpoint.auth.required', command: function (target) {
+            config.onSigninSuccessTarget = target;
+            $location.path($routeParams.locale ? '/' + $routeParams.locale + '/signin' : '/signin');
+        }}
+    ].forEach(function (it) {
+            topicRegistry.subscribe(it.topic, it.command);
+        });
+}
+
+function ActiveUserHasPermission(fetchAccountMetadata, topicRegistry, $http, config) {
+    var cache, cached;
+    var baseUri = '';
+
+    var clearCache = function () {
+        cache = [];
+        cached = false;
+    };
+    clearCache();
+
+    topicRegistry.subscribe('config.initialized', function (config) {
+        baseUri = config.baseUri || '';
+    });
+
+    return function (response, permission) {
+        fetchAccountMetadata({
+            unauthorized: function () {
+                response.no();
+            },
+            ok: function (metadata) {
+                var onSuccess = function (permissions) {
+                    cache = permissions;
+                    cached = true;
+                    permissions.reduce(function (result, it) {
+                        return result || it.name == permission
+                    }, false) ? response.yes() : response.no();
+                };
+
+                if (!cached)
+                    $http.post(baseUri + 'api/query/permission/list', {filter: {namespace: config.namespace, owner: metadata.principal}}, {
+                        withCredentials: true
+                    }).success(onSuccess);
+                else
+                    onSuccess(cache);
+            }
+        });
+    }
+}
+
+function CheckpointHasDirectiveFactory(topicRegistry, activeUserHasPermission) {
+    return {
+        restrict: 'A',
+        scope: {},
+        transclude: true,
+        template: '<span ng-show="permitted" ng-transclude></span>',
+        link: function (scope, el, attrs) {
+            var init = function () {
+                activeUserHasPermission({
+                    no: function () {
+                        scope.permitted = false;
+                    },
+                    yes: function () {
+                        scope.permitted = true;
+                    }
+                }, attrs.for);
+            };
+            init();
+
+            ['checkpoint.signin', 'checkpoint.signout'].forEach(function (topic) {
+                topicRegistry.subscribe(topic, function (msg) {
+                    init();
+                });
+            });
+        }
+    };
+}
+
+function IsAuthenticatedDirectiveFactory(fetchAccountMetadata) {
+    return {
+        restrict: 'E',
+        scope: {},
+        transclude: true,
+        template: '<div ng-show="authenticated"><span ng-transclude></span></div>',
+        link: function (scope) {
+            fetchAccountMetadata({
+                ok: function () {
+                    scope.authenticated = true
+                },
+                unauthorized: function () {
+                    scope.authenticated = false
+                }
+            })
+        }
+    }
+}
+
+function IsUnauthenticatedDirectiveFactory(fetchAccountMetadata) {
+    return {
+        restrict: 'E',
+        scope: {},
+        transclude: true,
+        template: '<div ng-show="unauthenticated"><span ng-transclude></span></div>',
+        link: function (scope) {
+            fetchAccountMetadata({
+                ok: function () {
+                    scope.unauthenticated = false
+                },
+                unauthorized: function () {
+                    scope.unauthenticated = true
+                }
+            })
+        }
+    }
+}
+
+function AuthenticatedWithRealmDirectiveFactory(fetchAccountMetadata, topicRegistry) {
+    return {
+        restrict: 'E',
+        scope: {},
+        transclude: true,
+        template: '<div ng-show="realm"><span ng-transclude></span></div>',
+        link: function(scope, el, attrs) {
+            var init = function() {
+                fetchAccountMetadata({
+                    ok: function(payload) {
+                        scope.realm = payload.realm == attrs.realm;
+                    },
+                    unauthorized: function() {
+                        scope.realm = false;
+                    }
+                })
+            };
+
+            ['checkpoint.signin', 'checkpoint.signout', 'app.start'].forEach(function (topic) {
+                topicRegistry.subscribe(topic, function (msg) {
+                    init();
+                });
+            });
+        }
+    }
+}
