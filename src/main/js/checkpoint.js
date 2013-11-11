@@ -7,6 +7,7 @@ angular.module('checkpoint', ['config'])
     .directive('authenticatedWithRealm', AuthenticatedWithRealmDirectiveFactory)
     .controller('SigninController', ['$scope', '$http', '$location', 'config', 'topicMessageDispatcher', SigninController])
     .controller('AccountMetadataController', ['$scope', '$location', '$routeParams', 'config', 'topicRegistry', 'fetchAccountMetadata', AccountMetadataController])
+    .controller('RegistrationController', ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', '$location', RegistrationController])
     .config(['$routeProvider', function ($routeProvider) {
         $routeProvider
             .when('/signin', {templateUrl: 'partials/checkpoint/signin.html', controller: SigninController})
@@ -267,5 +268,27 @@ function AuthenticatedWithRealmDirectiveFactory(fetchAccountMetadata, topicRegis
                 });
             });
         }
+    }
+}
+
+function RegistrationController($scope, usecaseAdapterFactory, config, restServiceHandler, $location) {
+    $scope.register = function() {
+        var onSuccess = function() {
+            $location.path($scope.locale + '/')
+        };
+        var presenter = usecaseAdapterFactory($scope, onSuccess);
+        var baseUri = config.baseUri || '';
+        presenter.params = {
+            url: baseUri + 'api/accounts',
+            method: 'PUT',
+            data: {
+                namespace: config.namespace,
+                username: $scope.username,
+                email: $scope.email,
+                alias: $scope.username,
+                password: $scope.password
+            }
+        };
+        restServiceHandler(presenter);
     }
 }

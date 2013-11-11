@@ -2,6 +2,9 @@ describe('checkpoint', function () {
     var self = this;
     var ctrl, scope, $httpBackend, location, dispatcher, registry, config;
     var payload = {};
+    var usecaseAdapter;
+    var rest;
+    var presenter;
 
     var username = 'johndoe';
     var password = '1234';
@@ -10,13 +13,18 @@ describe('checkpoint', function () {
     beforeEach(module('checkpoint'));
     beforeEach(module('rest.client'));
     beforeEach(module('notifications'));
-    beforeEach(inject(function ($rootScope, $injector, $location, topicMessageDispatcherMock, topicRegistryMock) {
+    beforeEach(module('angular.usecase.adapter'));
+    beforeEach(inject(function ($rootScope, $injector, $location, topicMessageDispatcherMock, topicRegistryMock, usecaseAdapterFactory, restServiceHandler) {
         scope = $rootScope.$new();
         config = $injector.get('config');
         location = $location;
         $httpBackend = $injector.get('$httpBackend');
         dispatcher = topicMessageDispatcherMock;
         registry = topicRegistryMock;
+        usecaseAdapter = usecaseAdapterFactory;
+        rest = restServiceHandler;
+        presenter = {};
+        usecaseAdapter.andReturn(presenter);
     }));
     afterEach(function () {
         $httpBackend.verifyNoOutstandingExpectation();
@@ -541,5 +549,53 @@ describe('checkpoint', function () {
                 expect(response).toBeDefined();
             });
         });
+    });
+
+    describe('RegistrationController', function() {
+        beforeEach(inject(function($controller) {
+            ctrl = $controller(RegistrationController, {$scope: scope, config: config});
+            config.namespace = 'namespace';
+            scope.username = 'username';
+            scope.email = 'email';
+            scope.password = 'password';
+            scope.register();
+        }));
+
+        it('test', function() {
+            expect(usecaseAdapter.calls[0].args[0]).toEqual(scope);
+        });
+
+        it('test', function() {
+            expect(presenter.params.method).toEqual('PUT');
+            expect(presenter.params.url).toEqual('api/accounts');
+            expect(presenter.params.data.namespace).toEqual(config.namespace);
+            expect(presenter.params.data.username).toEqual(scope.username);
+            expect(presenter.params.data.email).toEqual(scope.email);
+            expect(presenter.params.data.alias).toEqual(scope.username);
+            expect(presenter.params.data.password).toEqual(scope.password);
+        });
+
+        it('test', function() {
+            config.baseUri = 'baseUri/';
+            scope.register();
+            expect(presenter.params.method).toEqual('PUT');
+            expect(presenter.params.url).toEqual('baseUri/api/accounts');
+            expect(presenter.params.data.namespace).toEqual(config.namespace);
+            expect(presenter.params.data.username).toEqual(scope.username);
+            expect(presenter.params.data.email).toEqual(scope.email);
+            expect(presenter.params.data.alias).toEqual(scope.username);
+            expect(presenter.params.data.password).toEqual(scope.password);
+        });
+
+        it('test', function() {
+            expect(rest.calls[0].args[0]).toEqual(presenter);
+        });
+
+        it('test', function() {
+            scope.locale = 'locale';
+            usecaseAdapter.calls[0].args[1]();
+            expect(location.path()).toEqual('/locale/')
+        });
+
     });
 });
