@@ -558,14 +558,15 @@ describe('checkpoint', function () {
             scope.username = 'username';
             scope.email = 'email';
             scope.password = 'password';
+            scope.vat = 'vat';
             scope.register();
         }));
 
-        it('test', function() {
+        it('puts scope on presenter', function() {
             expect(usecaseAdapter.calls[0].args[0]).toEqual(scope);
         });
 
-        it('test', function() {
+        it('populates params on presenter', function() {
             expect(presenter.params.method).toEqual('PUT');
             expect(presenter.params.url).toEqual('api/accounts');
             expect(presenter.params.data.namespace).toEqual(config.namespace);
@@ -573,9 +574,10 @@ describe('checkpoint', function () {
             expect(presenter.params.data.email).toEqual(scope.email);
             expect(presenter.params.data.alias).toEqual(scope.username);
             expect(presenter.params.data.password).toEqual(scope.password);
+            expect(presenter.params.data.vat).toEqual(scope.vat);
         });
 
-        it('test', function() {
+        it('populates params on presenter with base uri', function() {
             config.baseUri = 'baseUri/';
             scope.register();
             expect(presenter.params.method).toEqual('PUT');
@@ -585,13 +587,14 @@ describe('checkpoint', function () {
             expect(presenter.params.data.email).toEqual(scope.email);
             expect(presenter.params.data.alias).toEqual(scope.username);
             expect(presenter.params.data.password).toEqual(scope.password);
+            expect(presenter.params.data.vat).toEqual(scope.vat);
         });
 
-        it('test', function() {
+        it('calls rest service', function() {
             expect(rest.calls[0].args[0]).toEqual(presenter);
         });
 
-        it('test', function() {
+        it('redirects to root', function() {
             scope.locale = 'locale';
             usecaseAdapter.calls[0].args[1]();
             expect(location.path()).toEqual('/locale/')

@@ -286,7 +286,8 @@ function RegistrationController($scope, usecaseAdapterFactory, config, restServi
                 username: $scope.username,
                 email: $scope.email,
                 alias: $scope.username,
-                password: $scope.password
+                password: $scope.password,
+                vat: $scope.vat
             }
         };
         restServiceHandler(presenter);
