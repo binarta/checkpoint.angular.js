@@ -149,6 +149,8 @@ function ActiveUserHasPermission(fetchAccountMetadata, topicRegistry, $http, con
     };
     clearCache();
 
+    topicRegistry.subscribe('checkpoint.signin', clearCache);
+
     topicRegistry.subscribe('config.initialized', function (config) {
         baseUri = config.baseUri || '';
     });
@@ -167,11 +169,11 @@ function ActiveUserHasPermission(fetchAccountMetadata, topicRegistry, $http, con
                     }, false) ? response.yes() : response.no();
                 };
 
-                if (!cached)
+                if (!cached) {
                     $http.post(baseUri + 'api/query/permission/list', {filter: {namespace: config.namespace, owner: metadata.principal}}, {
                         withCredentials: true
                     }).success(onSuccess);
-                else
+                } else
                     onSuccess(cache);
             }
         });

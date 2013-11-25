@@ -333,6 +333,10 @@ describe('checkpoint', function () {
             expect(registry['config.initialized']).toBeDefined();
         });
 
+        it('subscribes for checkpoint.signin notifications', function () {
+            expect(registry['checkpoint.signin']).toBeDefined();
+        });
+
         describe('with account metadata', function () {
             beforeEach(function () {
                 usecase(r, 'permission');
@@ -347,7 +351,6 @@ describe('checkpoint', function () {
             });
 
             describe('and signed in', function () {
-
 
                 function withPermission(permission, callback) {
                     return function () {
@@ -386,7 +389,21 @@ describe('checkpoint', function () {
                         response.ok(metadata);
                         assertAccepted();
                     });
+
+                    describe('on signin', function() {
+                        beforeEach(function() {
+                            r.status = undefined;
+                            registry['checkpoint.signin']();
+                            usecase(r, 'permission');
+                        });
+                        beforeEach(withPermission('modified'));
+
+                        it('permission cache is cleared', function() {
+                            assertRejected();
+                        })
+                    });
                 });
+
             });
 
             describe('and config.initialized notification received with baseUri', function () {
