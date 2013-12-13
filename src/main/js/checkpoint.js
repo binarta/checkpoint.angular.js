@@ -273,10 +273,14 @@ function AuthenticatedWithRealmDirectiveFactory(fetchAccountMetadata, topicRegis
     }
 }
 
-function RegistrationController($scope, usecaseAdapterFactory, config, restServiceHandler, $location) {
+function RegistrationController($scope, usecaseAdapterFactory, config, restServiceHandler, $location, topicMessageDispatcher) {
     $scope.register = function() {
         var onSuccess = function() {
-            $location.path($scope.locale + '/')
+            topicMessageDispatcher.fire('system.success', {
+                code:'checkpoint.registration.completed',
+                default:'Congratulations, your account has been created.'
+            });
+            $location.path($scope.locale + '/signin')
         };
         var presenter = usecaseAdapterFactory($scope, onSuccess);
         var baseUri = config.baseUri || '';

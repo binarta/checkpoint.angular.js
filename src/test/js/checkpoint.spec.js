@@ -611,11 +611,22 @@ describe('checkpoint', function () {
             expect(rest.calls[0].args[0]).toEqual(presenter);
         });
 
-        it('redirects to root', function() {
-            scope.locale = 'locale';
-            usecaseAdapter.calls[0].args[1]();
-            expect(location.path()).toEqual('/locale/')
-        });
+        describe('given registration success', function() {
+            beforeEach(function() {
+                scope.locale = 'locale';
+                usecaseAdapter.calls[0].args[1]();
+            });
 
+            it('raises system.success notification', function () {
+                expect(dispatcher['system.success']).toEqual({
+                    code:'checkpoint.registration.completed',
+                    default:'Congratulations, your account has been created.'
+                });
+            });
+
+            it('redirects to root', function() {
+                expect(location.path()).toEqual('/locale/signin')
+            });
+        });
     });
 });
