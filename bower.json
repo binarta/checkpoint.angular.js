@@ -1,6 +1,5 @@
 {
     "name": "binarta.checkpoint.angular",
-    "version": "0.0.2",
     "main": "./src/main/js/checkpoint.js",
     "dependencies": {
         "angular": "1.0.7"
