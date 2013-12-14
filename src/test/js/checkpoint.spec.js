@@ -570,7 +570,7 @@ describe('checkpoint', function () {
 
     describe('RegistrationController', function() {
         beforeEach(inject(function($controller) {
-            ctrl = $controller(RegistrationController, {$scope: scope, config: config});
+            ctrl = $controller(RegistrationController, {$scope: scope});
             config.namespace = 'namespace';
             scope.username = 'username';
             scope.email = 'email';
@@ -606,6 +606,18 @@ describe('checkpoint', function () {
             expect(presenter.params.data.password).toEqual(scope.password);
             expect(presenter.params.data.vat).toEqual(scope.vat);
         });
+
+        it('populates params on presenter based on registered mappers', inject(function(registrationRequestMessageMapperRegistry) {
+            registrationRequestMessageMapperRegistry.add(function(scope) {
+                return function(it) {
+                    it.customField = scope.customField;
+                    return it;
+                }
+            });
+            scope.customField = '1234';
+            scope.register();
+            expect(presenter.params.data.customField).toEqual('1234');
+        }));
 
         it('calls rest service', function() {
             expect(rest.calls[0].args[0]).toEqual(presenter);

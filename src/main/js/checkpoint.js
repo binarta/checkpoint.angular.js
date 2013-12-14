@@ -1,6 +1,8 @@
 angular.module('checkpoint', ['config'])
     .factory('fetchAccountMetadata', ['$http', 'config', 'topicRegistry', FetchAccountMetadata])
     .factory('activeUserHasPermission', ['fetchAccountMetadata', 'topicRegistry', '$http', 'config', ActiveUserHasPermission])
+    .factory('registrationRequestMessageMapper', ['config', 'registrationRequestMessageMapperRegistry', RegistrationRequestMessageMapperFactory])
+    .factory('registrationRequestMessageMapperRegistry', [RegistrationRequestMessageMapperRegistry])
     .directive('checkpointPermission', CheckpointHasDirectiveFactory)
     .directive('isAuthenticated', IsAuthenticatedDirectiveFactory)
     .directive('isUnauthenticated', IsUnauthenticatedDirectiveFactory)
@@ -273,7 +275,34 @@ function AuthenticatedWithRealmDirectiveFactory(fetchAccountMetadata, topicRegis
     }
 }
 
-function RegistrationController($scope, usecaseAdapterFactory, config, restServiceHandler, $location, topicMessageDispatcher) {
+function RegistrationRequestMessageMapperRegistry() {
+    var mappers = [];
+    return {
+        add:function(mapper) {
+            mappers.push(mapper);
+        },
+        all:function() {
+            return mappers;
+        }
+    }
+}
+
+function RegistrationRequestMessageMapperFactory(config, registrationRequestMessageMapperRegistry) {
+    return function(scope) {
+        return registrationRequestMessageMapperRegistry.all().reduce(function(p, c) {
+            return c(scope)(p);
+        }, {
+            namespace: config.namespace,
+            username: scope.username,
+            email: scope.email,
+            alias: scope.username,
+            password: scope.password,
+            vat: scope.vat
+        })
+    }
+}
+
+function RegistrationController($scope, usecaseAdapterFactory, config, restServiceHandler, $location, topicMessageDispatcher, registrationRequestMessageMapper) {
     $scope.register = function() {
         var onSuccess = function() {
             topicMessageDispatcher.fire('system.success', {
@@ -287,14 +316,7 @@ function RegistrationController($scope, usecaseAdapterFactory, config, restServi
         presenter.params = {
             url: baseUri + 'api/accounts',
             method: 'PUT',
-            data: {
-                namespace: config.namespace,
-                username: $scope.username,
-                email: $scope.email,
-                alias: $scope.username,
-                password: $scope.password,
-                vat: $scope.vat
-            }
+            data: registrationRequestMessageMapper($scope)
         };
         restServiceHandler(presenter);
     }
