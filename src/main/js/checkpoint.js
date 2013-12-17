@@ -311,7 +311,11 @@ function RegistrationController($scope, usecaseAdapterFactory, config, restServi
             });
             $location.path($scope.locale + '/signin')
         };
-        var presenter = usecaseAdapterFactory($scope, onSuccess);
+        var presenter = usecaseAdapterFactory($scope, onSuccess, {
+            rejected:function() {
+                topicMessageDispatcher.fire('checkpoint.registration.rejected', 'rejected');
+            }
+        });
         var baseUri = config.baseUri || '';
         presenter.params = {
             url: baseUri + 'api/accounts',

@@ -640,5 +640,15 @@ describe('checkpoint', function () {
                 expect(location.path()).toEqual('/locale/signin')
             });
         });
+
+        describe('given registration rejected', function() {
+            beforeEach(function() {
+                usecaseAdapter.calls[0].args[2].rejected();
+            });
+
+            it('raises checkpoint.registration.rejected notification', function () {
+                expect(dispatcher['checkpoint.registration.rejected']).toEqual('rejected');
+            });
+        });
     });
 });
