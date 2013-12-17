@@ -1,4 +1,4 @@
-angular.module("checkpoint.accounts", [])
+angular.module("checkpoint.accounts", ['ngRoute'])
     .config(['$routeProvider', function($routeProvider) {
         $routeProvider
             .when('/changemypassword', {templateUrl:'partials/checkpoint/changemypassword.html', controller: ['$scope', '$http', 'config', ChangeMyPasswordController]})

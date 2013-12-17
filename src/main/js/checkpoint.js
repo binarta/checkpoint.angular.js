@@ -1,4 +1,4 @@
-angular.module('checkpoint', ['config'])
+angular.module('checkpoint', ['ngRoute', 'config'])
     .factory('fetchAccountMetadata', ['$http', 'config', 'topicRegistry', FetchAccountMetadata])
     .factory('activeUserHasPermission', ['fetchAccountMetadata', 'topicRegistry', '$http', 'config', ActiveUserHasPermission])
     .factory('registrationRequestMessageMapper', ['config', 'registrationRequestMessageMapperRegistry', RegistrationRequestMessageMapperFactory])
