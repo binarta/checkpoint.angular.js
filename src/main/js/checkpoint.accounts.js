@@ -1,8 +1,16 @@
 angular.module("checkpoint.accounts", ['ngRoute'])
+    .controller('RecoverPasswordController', ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', 'recoverPasswordPresenter', RecoverPasswordController])
+    .controller('ResetPasswordController', ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', '$location', 'resetPasswordPresenter', ResetPasswordController])
+    .factory('resetPasswordPresenter', ['$location', 'topicMessageDispatcher', ResetPasswordPresenterFactory])
+    .factory('recoverPasswordPresenter', ['$location', RecoverPasswordPresenterFactory])
     .config(['$routeProvider', function($routeProvider) {
         $routeProvider
             .when('/changemypassword', {templateUrl:'partials/checkpoint/changemypassword.html', controller: ['$scope', '$http', 'config', ChangeMyPasswordController]})
+            .when('/password/reset', {templateUrl:'partials/checkpoint/reset-password.html', controller: 'ResetPasswordController'})
             .when('/:locale/changemypassword', {templateUrl:'partials/checkpoint/changemypassword.html', controller: ['$scope', '$http', 'config', ChangeMyPasswordController]})
+            .when('/:locale/password/recover', {templateUrl:'partials/checkpoint/recover-password.html', controller: 'RecoverPasswordController'})
+            .when('/:locale/password/reset', {templateUrl:'partials/checkpoint/reset-password.html', controller: 'ResetPasswordController'})
+            .when('/:locale/password/token/sent', {templateUrl:'partials/checkpoint/password-token-sent.html'})
     }]);
 
 
@@ -37,4 +45,62 @@ function ChangeMyPasswordController($scope, $http, config) {
     };
 
     resetStates();
+}
+
+function RecoverPasswordController($scope, usecaseAdapterFactory, config, restServiceHandler, recoverPasswordPresenter) {
+    function toBaseUri() {
+        return config.baseUri || '';
+    }
+    $scope.submit = function() {
+        var presenter = usecaseAdapterFactory($scope, function() {
+            recoverPasswordPresenter($scope);
+        });
+        presenter.params = {
+            method: 'PUT',
+            url: toBaseUri() + 'api/entity/password-reset-token',
+            data: {
+                namespace: config.namespace,
+                email: $scope.email || ''
+            }
+        };
+        restServiceHandler(presenter);
+    }
+}
+
+function ResetPasswordController($scope, usecaseAdapterFactory, config, restServiceHandler, $location, resetPasswordPresenter) {
+    function toBaseUri() {
+        return config.baseUri || '';
+    }
+
+    $scope.submit = function() {
+        var presenter = usecaseAdapterFactory($scope, function() {
+            resetPasswordPresenter($scope);
+        });
+        presenter.params = {
+            method: 'POST',
+            url: toBaseUri() + 'api/account/reset/password',
+            data: {
+                namespace: config.namespace,
+                password: $scope.password,
+                token: $location.$$search.token
+            }
+        };
+        restServiceHandler(presenter);
+    }
+}
+
+function ResetPasswordPresenterFactory($location, topicMessageDispatcher) {
+    return function(scope) {
+        topicMessageDispatcher.fire('system.success', {
+            code:'account.password.reset.success',
+            default:'Password was successfully updated'
+        });
+        $location.path('/' + scope.locale + '/signin');
+    }
+}
+
+function RecoverPasswordPresenterFactory($location) {
+    return function(scope) {
+        $location.path('/' + scope.locale + '/password/token/sent')
+    }
 }

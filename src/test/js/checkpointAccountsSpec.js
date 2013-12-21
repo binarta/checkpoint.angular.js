@@ -1,15 +1,29 @@
 describe('checkpoint accounts', function () {
     var scope, ctrl;
     var $httpBackend;
+    var usecaseAdapter;
+    var rest;
+    var location;
     var router = {
         path: function (uri) {
             this.receivedUri = uri
         }
     };
+    var presenter;
+    var config = {namespace:'namespace'};
+    var dispatcher;
 
-    beforeEach(inject(function ($injector, $rootScope) {
+    beforeEach(module('angular.usecase.adapter'));
+    beforeEach(module('notifications'));
+    beforeEach(module('rest.client'));
+    beforeEach(module('checkpoint.accounts'));
+    beforeEach(inject(function ($injector, $rootScope, usecaseAdapterFactory, restServiceHandler, $location, topicMessageDispatcherMock) {
         scope = $rootScope.$new();
         $httpBackend = $injector.get('$httpBackend');
+        usecaseAdapter = usecaseAdapterFactory;
+        rest = restServiceHandler;
+        location = $location;
+        dispatcher = topicMessageDispatcherMock;
     }));
     afterEach(function () {
         $httpBackend.verifyNoOutstandingExpectation();
@@ -65,6 +79,132 @@ describe('checkpoint accounts', function () {
             $httpBackend.flush();
 
             expect(scope.forbidden).toBe(true);
+        });
+    });
+
+    describe('RecoverPasswordController', function() {
+        beforeEach(inject(function($controller) {
+            ctrl = $controller(RecoverPasswordController, {$scope: scope, config: config});
+            presenter = {};
+            usecaseAdapter.andReturn(presenter);
+        }));
+
+        describe('on submit', function() {
+            [
+                'baseuri/',
+                null
+            ].forEach(function(uri) {
+                describe("with base uri = " + uri, function() {
+                    beforeEach(function() {
+                        config.baseUri = uri;
+                        scope.email = 'email';
+                        scope.submit();
+                    });
+
+                    it('creates presenter', function() {
+                        expect(usecaseAdapter.calls[0].args[0]).toEqual(scope);
+                    });
+
+                    it('sends PUT request', function() {
+                        expect(presenter.params.method).toEqual('PUT');
+                    });
+
+                    it('to the entity resource', function() {
+                        expect(presenter.params.url).toEqual((uri || '') + 'api/entity/password-reset-token');
+                    });
+
+                    it('passes data', function() {
+                        expect(presenter.params.data.namespace).toEqual(config.namespace);
+                        expect(presenter.params.data.email).toEqual(scope.email);
+                    });
+
+                    it('sends rest call', function() {
+                        expect(rest.calls[0].args[0]).toEqual(presenter);
+                    });
+                });
+            });
+        });
+    });
+
+    describe('ResetPasswordController', function() {
+        var resetPresenter = jasmine.createSpy('resetPasswordPresenter');
+        beforeEach(inject(function($controller) {
+            ctrl = $controller(ResetPasswordController, {$scope:scope, config: config, $location: location, resetPasswordPresenter: resetPresenter});
+            presenter = {};
+            usecaseAdapter.andReturn(presenter);
+        }));
+
+        describe('on submit', function() {
+            [
+                null,
+                'baseuri/'
+            ].forEach(function(uri) {
+                    describe('with base uri = ' + uri, function() {
+                        beforeEach(function() {
+                            config.baseUri = uri;
+                            scope.password = 'new-password';
+                            scope.locale = 'locale';
+                            location.search('token', 'provided-token');
+                            scope.submit();
+                        });
+
+                        it('creates presenter', function() {
+                            expect(usecaseAdapter.calls[0].args[0]).toEqual(scope);
+                        });
+
+                        it('sends POST request', function() {
+                            expect(presenter.params.method).toEqual('POST');
+                        });
+
+                        it('to the account resource', function() {
+                            expect(presenter.params.url).toEqual((uri || '') + 'api/account/reset/password');
+                        });
+
+                        it('passes data', function() {
+                            expect(presenter.params.data.namespace).toEqual(config.namespace);
+                            expect(presenter.params.data.password).toEqual(scope.password);
+                            expect(presenter.params.data.token).toEqual('provided-token');
+                        });
+
+                        it('sends rest call', function() {
+                            expect(rest.calls[0].args[0]).toEqual(presenter);
+                        });
+                    });
+                });
+
+
+        });
+    });
+
+    describe('ResetPasswordPresenter', function() {
+        var resetPresenter;
+
+        beforeEach(inject(function(resetPasswordPresenter) {
+            resetPresenter = resetPasswordPresenter;
+            scope.locale = 'locale';
+            resetPresenter(scope);
+        }));
+
+        it('redirects to login', function() {
+            expect(location.path()).toEqual('/locale/signin');
+        });
+
+        it('test', function() {
+            expect(dispatcher['system.success']).toEqual({code:'account.password.reset.success', default:'Password was successfully updated'});
+        })
+    });
+
+    describe('RecoverPasswordPresenter', function() {
+        var recoverPresenter;
+
+        beforeEach(inject(function(recoverPasswordPresenter) {
+            recoverPresenter = recoverPasswordPresenter;
+            scope.locale = 'locale';
+            recoverPresenter(scope);
+        }));
+
+        it('redirects to', function() {
+            expect(location.path()).toEqual('/locale/password/token/sent');
         });
     });
 });
