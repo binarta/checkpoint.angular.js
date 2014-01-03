@@ -624,20 +624,39 @@ describe('checkpoint', function () {
         });
 
         describe('given registration success', function() {
-            beforeEach(function() {
-                scope.locale = 'locale';
-                usecaseAdapter.calls[0].args[1]();
-            });
+            describe('and locale is known', function() {
+                beforeEach(function() {
+                    scope.locale = 'locale';
+                    usecaseAdapter.calls[0].args[1]();
+                });
 
-            it('raises system.success notification', function () {
-                expect(dispatcher['system.success']).toEqual({
-                    code:'checkpoint.registration.completed',
-                    default:'Congratulations, your account has been created.'
+                it('raises system.success notification', function () {
+                    expect(dispatcher['system.success']).toEqual({
+                        code:'checkpoint.registration.completed',
+                        default:'Congratulations, your account has been created.'
+                    });
+                });
+
+                it('redirects to root', function() {
+                    expect(location.path()).toEqual('/locale/signin');
                 });
             });
 
-            it('redirects to root', function() {
-                expect(location.path()).toEqual('/locale/signin')
+            describe('and locale is unknown', function() {
+                beforeEach(function() {
+                    usecaseAdapter.calls[0].args[1]();
+                });
+
+                it('raises system.success notification', function () {
+                    expect(dispatcher['system.success']).toEqual({
+                        code:'checkpoint.registration.completed',
+                        default:'Congratulations, your account has been created.'
+                    });
+                });
+
+                it('redirects to root', function() {
+                    expect(location.path()).toEqual('/signin');
+                });
             });
         });
 

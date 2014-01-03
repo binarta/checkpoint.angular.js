@@ -309,7 +309,7 @@ function RegistrationController($scope, usecaseAdapterFactory, config, restServi
                 code:'checkpoint.registration.completed',
                 default:'Congratulations, your account has been created.'
             });
-            $location.path($scope.locale + '/signin')
+            $location.path(($scope.locale ? $scope.locale : '') + '/signin')
         };
         var presenter = usecaseAdapterFactory($scope, onSuccess, {
             rejected:function() {
