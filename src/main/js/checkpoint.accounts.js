@@ -6,12 +6,12 @@ angular.module("checkpoint.accounts", ['ngRoute'])
     .config(['$routeProvider', function($routeProvider) {
         $routeProvider
             .when('/changemypassword', {templateUrl:'partials/checkpoint/changemypassword.html', controller: ['$scope', '$http', 'config', ChangeMyPasswordController]})
-            .when('/:locale/changemypassword', {templateUrl:'partials/checkpoint/changemypassword.html', controller: ['$scope', '$http', 'config', ChangeMyPasswordController]})
             .when('/password/reset', {templateUrl:'partials/checkpoint/reset-password.html', controller: 'ResetPasswordController'})
-            .when('/:locale/password/reset', {templateUrl:'partials/checkpoint/reset-password.html', controller: 'ResetPasswordController'})
             .when('/password/recover', {templateUrl:'partials/checkpoint/recover-password.html', controller: 'RecoverPasswordController'})
-            .when('/:locale/password/recover', {templateUrl:'partials/checkpoint/recover-password.html', controller: 'RecoverPasswordController'})
             .when('/password/token/sent', {templateUrl:'partials/checkpoint/password-token-sent.html'})
+            .when('/:locale/changemypassword', {templateUrl:'partials/checkpoint/changemypassword.html', controller: ['$scope', '$http', 'config', ChangeMyPasswordController]})
+            .when('/:locale/password/reset', {templateUrl:'partials/checkpoint/reset-password.html', controller: 'ResetPasswordController'})
+            .when('/:locale/password/recover', {templateUrl:'partials/checkpoint/recover-password.html', controller: 'RecoverPasswordController'})
             .when('/:locale/password/token/sent', {templateUrl:'partials/checkpoint/password-token-sent.html'})
     }]);
 
@@ -97,12 +97,16 @@ function ResetPasswordPresenterFactory($location, topicMessageDispatcher) {
             code:'account.password.reset.success',
             default:'Password was successfully updated'
         });
-        $location.path('/' + scope.locale + '/signin');
+        $location.path(toLocale(scope) + '/signin');
     }
+}
+
+function toLocale(scope) {
+    return scope.locale ? '/' + scope.locale : '';
 }
 
 function RecoverPasswordPresenterFactory($location) {
     return function(scope) {
-        $location.path('/' + scope.locale + '/password/token/sent')
-    }
+        $location.path(toLocale(scope) + '/password/token/sent')
+    };
 }

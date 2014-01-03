@@ -181,15 +181,18 @@ describe('checkpoint accounts', function () {
 
         beforeEach(inject(function(resetPasswordPresenter) {
             resetPresenter = resetPasswordPresenter;
-            scope.locale = 'locale';
-            resetPresenter(scope);
         }));
 
-        it('redirects to login', function() {
-            expect(location.path()).toEqual('/locale/signin');
+        ['locale', null, ''].forEach(function(locale) {
+            it('redirects to login with locale = ' + locale, function() {
+                resetPresenter({locale: locale});
+                expect(location.path()).toEqual((locale ? '/' + locale : '') + '/signin');
+            });
         });
 
-        it('test', function() {
+
+        it('fires system success', function() {
+            resetPresenter(scope);
             expect(dispatcher['system.success']).toEqual({code:'account.password.reset.success', default:'Password was successfully updated'});
         })
     });
@@ -199,12 +202,13 @@ describe('checkpoint accounts', function () {
 
         beforeEach(inject(function(recoverPasswordPresenter) {
             recoverPresenter = recoverPasswordPresenter;
-            scope.locale = 'locale';
-            recoverPresenter(scope);
         }));
 
-        it('redirects to', function() {
-            expect(location.path()).toEqual('/locale/password/token/sent');
+        ['locale', null, ''].forEach(function(locale) {
+            it('redirects to with locale = ' + locale, function() {
+                recoverPresenter({locale: locale});
+                expect(location.path()).toEqual((locale ? '/' + locale : '') + '/password/token/sent');
+            });
         });
     });
 });
