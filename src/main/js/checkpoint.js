@@ -1,4 +1,3 @@
-var $routeProviderReference;
 angular.module('checkpoint', ['ngRoute', 'config'])
     .factory('fetchAccountMetadata', ['$http', 'config', 'topicRegistry', FetchAccountMetadata])
     .factory('activeUserHasPermission', ['fetchAccountMetadata', 'topicRegistry', '$http', 'config', ActiveUserHasPermission])
@@ -12,17 +11,10 @@ angular.module('checkpoint', ['ngRoute', 'config'])
     .controller('AccountMetadataController', ['$scope', '$location', '$routeParams', 'config', 'topicRegistry', 'fetchAccountMetadata', AccountMetadataController])
     .controller('RegistrationController', ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', '$location', RegistrationController])
     .config(['$routeProvider', function ($routeProvider) {
-        $routeProviderReference = $routeProvider;
-    }])
-    .run(function(topicRegistry){
-        topicRegistry.subscribe('config.initialized', function (config) {
-            var version = '';
-            if(config.version) version = '?v=' + config.version;
-            $routeProviderReference
-                .when('/signin', {templateUrl: 'partials/checkpoint/signin.html'+version, controller: SigninController})
-                .when('/:locale/signin', {templateUrl: 'partials/checkpoint/signin.html'+version, controller: SigninController})
-        });
-    });
+        $routeProvider
+            .when('/signin', {templateUrl: 'partials/checkpoint/signin.html', controller: SigninController})
+            .when('/:locale/signin', {templateUrl: 'partials/checkpoint/signin.html', controller: SigninController})
+    }]);
 
 function SignoutController($scope, $http, topicMessageDispatcher, config) {
     $scope.submit = function () {

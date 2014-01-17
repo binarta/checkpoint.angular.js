@@ -1,27 +1,20 @@
-var $routeProviderReference;
 angular.module("checkpoint.accounts", ['ngRoute'])
     .controller('RecoverPasswordController', ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', 'recoverPasswordPresenter', RecoverPasswordController])
     .controller('ResetPasswordController', ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', '$location', 'resetPasswordPresenter', ResetPasswordController])
     .factory('resetPasswordPresenter', ['$location', 'topicMessageDispatcher', ResetPasswordPresenterFactory])
     .factory('recoverPasswordPresenter', ['$location', RecoverPasswordPresenterFactory])
     .config(['$routeProvider', function($routeProvider) {
-        $routeProviderReference = $routeProvider;
-    }])
-    .run(function(topicRegistry){
-        topicRegistry.subscribe('config.initialized', function (config) {
-            var version = '';
-            if(config.version) version = '?v=' + config.version;
-            $routeProviderReference
-                .when('/changemypassword', {templateUrl:'partials/checkpoint/changemypassword.html'+version, controller: ['$scope', '$http', 'config', ChangeMyPasswordController]})
-                .when('/password/reset', {templateUrl:'partials/checkpoint/reset-password.html'+version, controller: 'ResetPasswordController'})
-                .when('/password/recover', {templateUrl:'partials/checkpoint/recover-password.html'+version, controller: 'RecoverPasswordController'})
-                .when('/password/token/sent', {templateUrl:'partials/checkpoint/password-token-sent.html'+version})
-                .when('/:locale/changemypassword', {templateUrl:'partials/checkpoint/changemypassword.html'+version, controller: ['$scope', '$http', 'config', ChangeMyPasswordController]})
-                .when('/:locale/password/reset', {templateUrl:'partials/checkpoint/reset-password.html'+version, controller: 'ResetPasswordController'})
-                .when('/:locale/password/recover', {templateUrl:'partials/checkpoint/recover-password.html'+version, controller: 'RecoverPasswordController'})
-                .when('/:locale/password/token/sent', {templateUrl:'partials/checkpoint/password-token-sent.html'+version})
-        });
-    });
+        $routeProvider
+            .when('/changemypassword', {templateUrl:'partials/checkpoint/changemypassword.html', controller: ['$scope', '$http', 'config', ChangeMyPasswordController]})
+            .when('/password/reset', {templateUrl:'partials/checkpoint/reset-password.html', controller: 'ResetPasswordController'})
+            .when('/password/recover', {templateUrl:'partials/checkpoint/recover-password.html', controller: 'RecoverPasswordController'})
+            .when('/password/token/sent', {templateUrl:'partials/checkpoint/password-token-sent.html'})
+            .when('/:locale/changemypassword', {templateUrl:'partials/checkpoint/changemypassword.html', controller: ['$scope', '$http', 'config', ChangeMyPasswordController]})
+            .when('/:locale/password/reset', {templateUrl:'partials/checkpoint/reset-password.html', controller: 'ResetPasswordController'})
+            .when('/:locale/password/recover', {templateUrl:'partials/checkpoint/recover-password.html', controller: 'RecoverPasswordController'})
+            .when('/:locale/password/token/sent', {templateUrl:'partials/checkpoint/password-token-sent.html'})
+    }]);
+
 
 function ChangeMyPasswordController($scope, $http, config) {
     var onSuccess = function () {
