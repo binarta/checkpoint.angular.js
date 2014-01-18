@@ -185,9 +185,8 @@ function ActiveUserHasPermission(fetchAccountMetadata, topicRegistry, $http, con
 function CheckpointHasDirectiveFactory(topicRegistry, activeUserHasPermission) {
     return {
         restrict: 'A',
-        scope: {},
         transclude: true,
-        template: '<span ng-show="permitted" ng-transclude></span>',
+        template: '<span ng-if="permitted" ng-transclude></span>',
         link: function (scope, el, attrs) {
             var init = function () {
                 activeUserHasPermission({

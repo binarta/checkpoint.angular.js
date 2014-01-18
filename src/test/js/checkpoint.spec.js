@@ -451,7 +451,7 @@ describe('checkpoint', function () {
                 expectedPermission = permission;
             };
             directive = CheckpointHasDirectiveFactory(registry, usecase);
-            scope = directive.scope;
+            scope = {};
             directive.link(scope, null, {for: 'permission'});
         }));
 
@@ -459,13 +459,9 @@ describe('checkpoint', function () {
             expect(directive.restrict).toEqual('A');
         });
 
-        it('declares a scope', function () {
-            expect(directive.scope).toBeDefined();
-        });
-
         it('template', function () {
             expect(directive.transclude).toEqual(true);
-            expect(directive.template).toEqual('<span ng-show="permitted" ng-transclude></span>');
+            expect(directive.template).toEqual('<span ng-if="permitted" ng-transclude></span>');
         });
 
         it('link trigger usecase', function () {
