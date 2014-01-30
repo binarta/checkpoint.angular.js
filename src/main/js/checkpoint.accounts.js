@@ -98,6 +98,7 @@ function ResetPasswordPresenterFactory($location, topicMessageDispatcher) {
             default:'Password was successfully updated'
         });
         $location.path(toLocale(scope) + '/signin');
+        $location.search('token', null);
     }
 }
 
