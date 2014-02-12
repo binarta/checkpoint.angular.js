@@ -128,11 +128,27 @@ describe('checkpoint accounts', function () {
 
     describe('ResetPasswordController', function() {
         var resetPresenter = jasmine.createSpy('resetPasswordPresenter');
+
+        describe('when username in query string', function() {
+            beforeEach(inject(function($controller) {
+                location.search('username', 'clerk');
+                $controller(ResetPasswordController, {$scope:scope, config: config, $location: location, resetPasswordPresenter: resetPresenter});
+            }));
+
+            it('expose username on scope', function() {
+                expect(scope.username).toEqual('clerk');
+            });
+        });
+
         beforeEach(inject(function($controller) {
             ctrl = $controller(ResetPasswordController, {$scope:scope, config: config, $location: location, resetPasswordPresenter: resetPresenter});
             presenter = {};
             usecaseAdapter.andReturn(presenter);
         }));
+
+        it('when username is not in query string', function() {
+            expect(scope.username).toBeUndefined();
+        });
 
         describe('on submit', function() {
             [

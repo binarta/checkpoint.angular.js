@@ -74,6 +74,8 @@ function ResetPasswordController($scope, usecaseAdapterFactory, config, restServ
         return config.baseUri || '';
     }
 
+    if($location.search().username) $scope.username = $location.search().username;
+
     $scope.submit = function() {
         var presenter = usecaseAdapterFactory($scope, function() {
             resetPasswordPresenter($scope);
@@ -84,7 +86,7 @@ function ResetPasswordController($scope, usecaseAdapterFactory, config, restServ
             data: {
                 namespace: config.namespace,
                 password: $scope.password,
-                token: $location.$$search.token
+                token: $location.search().token
             }
         };
         restServiceHandler(presenter);
