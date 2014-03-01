@@ -29,11 +29,20 @@ SignoutController.$inject = ['$scope', '$http', 'topicMessageDispatcher', 'confi
 
 function SigninController($scope, $http, $location, config, topicMessageDispatcher) {
     var self = this;
+    self.config = {};
+
+    $scope.init = function (config) {
+        self.config = config;
+    };
+
+    function isRedirectEnabled() {
+        return !self.config.noredirect;
+    }
 
     $scope.submit = function () {
         var onSuccess = function () {
             topicMessageDispatcher.fire('checkpoint.signin', 'ok');
-            $location.path(config.onSigninSuccessTarget || config.redirectUri || '/');
+            if(isRedirectEnabled()) $location.path(config.onSigninSuccessTarget || config.redirectUri || '/');
             config.onSigninSuccessTarget = undefined;
         };
 

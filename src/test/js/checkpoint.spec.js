@@ -79,10 +79,14 @@ describe('checkpoint', function () {
             $httpBackend.flush();
         });
 
-        it('on submit success', function () {
-            $httpBackend.expect('POST', /.*/).respond(200);
+        function triggerSuccess(status, data) {
+            $httpBackend.expect('POST', /.*/).respond(status, data);
             scope.submit();
             $httpBackend.flush();
+        }
+
+        it('on submit success', function () {
+            triggerSuccess(200);
 
             expect(location.path()).toEqual('/redirect');
             expect(dispatcher['checkpoint.signin']).toEqual('ok');
@@ -94,19 +98,24 @@ describe('checkpoint', function () {
             });
 
             it('on submit success', function() {
-                $httpBackend.expect('POST', /.*/).respond(200);
-                scope.submit();
-                $httpBackend.flush();
+                triggerSuccess(200);
 
                 expect(location.path()).toEqual('/success/target');
                 expect(config.onSigninSuccessTarget).toBeUndefined();
             });
         });
 
+        it('on submit success with no redirect', function () {
+            location.path('/noredirect');
+            scope.init({noredirect: true});
+
+            triggerSuccess(200);
+
+            expect(location.path()).toEqual('/noredirect');
+        });
+
         it('on submit rejected', function () {
-            $httpBackend.expect('POST', /.*/).respond(412, payload);
-            scope.submit();
-            $httpBackend.flush();
+            triggerSuccess(412, payload);
 
             expect(ctrl.status).toEqual(412);
             expect(ctrl.payload).toEqual(payload);
@@ -119,9 +128,7 @@ describe('checkpoint', function () {
         });
 
         it('expose rejection violations', function () {
-            $httpBackend.expect('POST', /.*/).respond(412, {credentials: ['mismatch']});
-            scope.submit();
-            $httpBackend.flush();
+            triggerSuccess(412, {credentials: ['mismatch']});
 
             expect(scope.violations).toEqual([
                 {context: 'credentials', cause: 'mismatch'}
