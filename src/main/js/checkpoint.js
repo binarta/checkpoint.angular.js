@@ -3,12 +3,13 @@ angular.module('checkpoint', ['ngRoute', 'config'])
     .factory('activeUserHasPermission', ['fetchAccountMetadata', 'topicRegistry', '$http', 'config', ActiveUserHasPermission])
     .factory('registrationRequestMessageMapper', ['config', 'registrationRequestMessageMapperRegistry', RegistrationRequestMessageMapperFactory])
     .factory('registrationRequestMessageMapperRegistry', [RegistrationRequestMessageMapperRegistry])
+    .factory('authRequiredPresenter', ['config', '$location', '$routeParams', AuthRequiredPresenterFactory])
     .directive('checkpointPermission', CheckpointHasDirectiveFactory)
     .directive('isAuthenticated', IsAuthenticatedDirectiveFactory)
     .directive('isUnauthenticated', IsUnauthenticatedDirectiveFactory)
     .directive('authenticatedWithRealm', AuthenticatedWithRealmDirectiveFactory)
     .controller('SigninController', ['$scope', '$http', '$location', 'config', 'topicMessageDispatcher', SigninController])
-    .controller('AccountMetadataController', ['$scope', '$location', '$routeParams', 'config', 'topicRegistry', 'fetchAccountMetadata', AccountMetadataController])
+    .controller('AccountMetadataController', ['$scope', 'topicRegistry', 'fetchAccountMetadata', 'authRequiredPresenter', AccountMetadataController])
     .controller('RegistrationController', ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', '$location', RegistrationController])
     .config(['$routeProvider', function ($routeProvider) {
         $routeProvider
@@ -114,7 +115,7 @@ function FetchAccountMetadata($http, config, topicRegistry) {
     return  usecase
 }
 
-function AccountMetadataController($scope, $location, $routeParams, config, topicRegistry, fetchAccountMetadata) {
+function AccountMetadataController($scope, topicRegistry, fetchAccountMetadata, authRequiredPresenter) {
     var self = this;
 
     var init = function () {
@@ -141,9 +142,8 @@ function AccountMetadataController($scope, $location, $routeParams, config, topi
         {topic: 'app.start', command: init},
         {topic: 'checkpoint.signin', command: init},
         {topic: 'checkpoint.signout', command: init},
-        {topic: 'checkpoint.auth.required', command: function (target) {
-            config.onSigninSuccessTarget = target;
-            $location.path($routeParams.locale ? '/' + $routeParams.locale + '/signin' : '/signin');
+        {topic: 'checkpoint.auth.required', command: function(target) {
+            authRequiredPresenter(target, $scope);
         }}
     ].forEach(function (it) {
             topicRegistry.subscribe(it.topic, it.command);
@@ -331,5 +331,12 @@ function RegistrationController($scope, usecaseAdapterFactory, config, restServi
             data: registrationRequestMessageMapper($scope)
         };
         restServiceHandler(presenter);
+    }
+}
+
+function AuthRequiredPresenterFactory(config, $location, $routeParams) {
+    return function(target) {
+        config.onSigninSuccessTarget = target;
+        $location.path($routeParams.locale ? '/' + $routeParams.locale + '/signin' : '/signin');
     }
 }

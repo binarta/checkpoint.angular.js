@@ -252,6 +252,7 @@ describe('checkpoint', function () {
     describe('AccountMetadataController', function () {
         var registry, response;
         var payload = {};
+        var presenter = jasmine.createSpy('presenter');
 
         beforeEach(inject(function ($controller, $http) {
             response = undefined;
@@ -261,7 +262,7 @@ describe('checkpoint', function () {
             var usecase = function (it) {
                 response = it
             };
-            ctrl = $controller(AccountMetadataController, {$scope: scope, topicRegistry: registry, fetchAccountMetadata: usecase});
+            ctrl = $controller(AccountMetadataController, {$scope: scope, topicRegistry: registry, fetchAccountMetadata: usecase, authRequiredPresenter: presenter});
         }));
 
         ['app.start', 'checkpoint.signin', 'checkpoint.signout'].forEach(function (topic) {
@@ -288,8 +289,22 @@ describe('checkpoint', function () {
             expect(scope.metadata).toEqual(payload);
         });
 
-        it('on auth required notification redirect for signin', function () {
+        it('on auth required notification delegate to presenter by passing target and scope', function () {
             registry['checkpoint.auth.required']('/previous/path');
+            expect(presenter.calls[0].args[0]).toEqual('/previous/path');
+            expect(presenter.calls[0].args[1]).toEqual(scope);
+        });
+    });
+
+    describe('AuthRequiredPresenter', function() {
+        var presenter;
+
+        beforeEach(inject(function(authRequiredPresenter) {
+            presenter = authRequiredPresenter;
+        }));
+
+        it('when presenting redirect for signin', function() {
+            presenter('/previous/path');
             expect(location.path()).toEqual('/signin');
             expect(config.onSigninSuccessTarget).toEqual('/previous/path');
         });
@@ -299,10 +314,10 @@ describe('checkpoint', function () {
                 $routeParams.locale = 'lang';
             }));
 
-            it('on checkpoint.auth.required open localized signin route', function() {
-                registry['checkpoint.auth.required']('/previous/path');
+            it('when presenting redirect for localized signin', function() {
+                presenter('/previous/path');
                 expect(location.path()).toEqual('/lang/signin');
-            });
+            })
         });
     });
 
