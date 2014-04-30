@@ -40,14 +40,15 @@ function SigninController($scope, $http, $location, config, topicMessageDispatch
         return !self.config.noredirect;
     }
 
-    $scope.submit = function () {
-        var onSuccess = function () {
+    $scope.submit = function (args) {
+        var onSuccessCallback = function () {
             topicMessageDispatcher.fire('checkpoint.signin', 'ok');
             if(isRedirectEnabled()) $location.path(config.onSigninSuccessTarget || config.redirectUri || '/');
             config.onSigninSuccessTarget = undefined;
+            if(args && args.success) args.success();
         };
 
-        var onError = function (payload, status) {
+        var onErrorCallback = function (payload, status) {
             var toViolations = function (payload) {
                 return Object.keys(payload).map(function (it) {
                     return {context: it, cause: payload[it][0]}
@@ -66,7 +67,7 @@ function SigninController($scope, $http, $location, config, topicMessageDispatch
             namespace: config.namespace
         }, {
             withCredentials: true
-        }).success(onSuccess).error(onError);
+        }).success(onSuccessCallback).error(onErrorCallback);
     };
 
     $scope.rejected = function () {

@@ -79,9 +79,9 @@ describe('checkpoint', function () {
             $httpBackend.flush();
         });
 
-        function triggerSuccess(status, data) {
+        function triggerSuccess(status, data, onSuccess) {
             $httpBackend.expect('POST', /.*/).respond(status, data);
-            scope.submit();
+            scope.submit({success: onSuccess});
             $httpBackend.flush();
         }
 
@@ -90,6 +90,15 @@ describe('checkpoint', function () {
 
             expect(location.path()).toEqual('/redirect');
             expect(dispatcher['checkpoint.signin']).toEqual('ok');
+        });
+
+        it('on submit success with extra success callback', function () {
+            var onSuccessExecuted;
+            triggerSuccess(200, null, function () {
+                onSuccessExecuted = true;
+            });
+
+            expect(onSuccessExecuted).toEqual(true);
         });
 
         describe('with on signin success target', function() {
