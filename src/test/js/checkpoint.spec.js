@@ -474,9 +474,9 @@ describe('checkpoint', function () {
 
         beforeEach(inject(function () {
             response = undefined;
-            registry = {subscribe: function (topic, listener) {
+            registry = function (scope, topic, listener) {
                 registry[topic] = listener;
-            }};
+            };
             var usecase = function (it, permission) {
                 response = it;
                 expectedPermission = permission;
@@ -494,6 +494,49 @@ describe('checkpoint', function () {
             expect(directive.transclude).toEqual(true);
             expect(directive.template).toEqual('<span ng-if="permitted" ng-transclude></span>');
         });
+
+        it('link trigger usecase', function () {
+            expect(response).toBeDefined();
+            expect(expectedPermission).toEqual('permission');
+        });
+
+        it('not permitted', function () {
+            response.no();
+            expect(scope.permitted).toEqual(false);
+        });
+
+        it('permitted', function () {
+            response.yes();
+            expect(scope.permitted).toEqual(true);
+        });
+
+        ['checkpoint.signin', 'checkpoint.signout'].forEach(function (topic) {
+            it('handle ' + topic + ' notification', function () {
+                response = undefined;
+                expectedPermission = undefined;
+                registry[topic]('ok');
+                expect(response).toBeDefined();
+                expect(expectedPermission).toEqual('permission');
+            });
+        });
+    });
+
+    describe('checkpointPermissionFor directive', function () {
+        var directive, registry, response, expectedPermission;
+
+        beforeEach(inject(function () {
+            response = undefined;
+            registry = function (scope, topic, listener) {
+                registry[topic] = listener;
+            };
+            var usecase = function (it, permission) {
+                response = it;
+                expectedPermission = permission;
+            };
+            directive = CheckpointPermissionForDirectiveFactory(registry, usecase);
+            scope = {};
+            directive(scope, null, {checkpointPermissionFor: 'permission'});
+        }));
 
         it('link trigger usecase', function () {
             expect(response).toBeDefined();

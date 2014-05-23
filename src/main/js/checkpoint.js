@@ -5,6 +5,7 @@ angular.module('checkpoint', ['ngRoute', 'config'])
     .factory('registrationRequestMessageMapperRegistry', [RegistrationRequestMessageMapperRegistry])
     .factory('authRequiredPresenter', ['config', '$location', '$routeParams', AuthRequiredPresenterFactory])
     .directive('checkpointPermission', CheckpointHasDirectiveFactory)
+    .directive('checkpointPermissionFor', CheckpointPermissionForDirectiveFactory)
     .directive('isAuthenticated', IsAuthenticatedDirectiveFactory)
     .directive('isUnauthenticated', IsUnauthenticatedDirectiveFactory)
     .directive('authenticatedWithRealm', AuthenticatedWithRealmDirectiveFactory)
@@ -192,7 +193,8 @@ function ActiveUserHasPermission(fetchAccountMetadata, topicRegistry, $http, con
     }
 }
 
-function CheckpointHasDirectiveFactory(topicRegistry, activeUserHasPermission) {
+// @deprecated Try to use the less intrusive checkpointPermissionFor directive
+function CheckpointHasDirectiveFactory(ngRegisterTopicHandler, activeUserHasPermission) {
     return {
         restrict: 'A',
         transclude: true,
@@ -211,12 +213,34 @@ function CheckpointHasDirectiveFactory(topicRegistry, activeUserHasPermission) {
             init();
 
             ['checkpoint.signin', 'checkpoint.signout'].forEach(function (topic) {
-                topicRegistry.subscribe(topic, function (msg) {
+                ngRegisterTopicHandler(scope, topic, function (msg) {
                     init();
                 });
             });
         }
     };
+}
+
+function CheckpointPermissionForDirectiveFactory(ngRegisterTopicHandler, activeUserHasPermission) {
+    return function (scope, el, attrs) {
+        var init = function () {
+            activeUserHasPermission({
+                no: function () {
+                    scope.permitted = false;
+                },
+                yes: function () {
+                    scope.permitted = true;
+                }
+            }, attrs.checkpointPermissionFor);
+        };
+        init();
+
+        ['checkpoint.signin', 'checkpoint.signout'].forEach(function (topic) {
+            ngRegisterTopicHandler(scope, topic, function (msg) {
+                init();
+            });
+        });
+    }
 }
 
 function IsAuthenticatedDirectiveFactory(fetchAccountMetadata) {
