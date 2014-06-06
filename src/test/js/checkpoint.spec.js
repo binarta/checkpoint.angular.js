@@ -69,20 +69,23 @@ describe('checkpoint', function () {
         }));
 
         it('on submit send post request', function () {
-            $httpBackend.expect('POST', 'api/checkpoint', {username: username, password: password, rememberMe: rememberMe, namespace: 'namespace'}).respond(200);
-
             scope.username = username;
             scope.password = password;
             scope.rememberMe = rememberMe;
             scope.submit();
 
-            $httpBackend.flush();
+            expect(rest.calls[0].args[0].params.method).toEqual('POST');
+            expect(rest.calls[0].args[0].params.url).toEqual('api/checkpoint');
+            expect(rest.calls[0].args[0].params.data).toEqual({username: username, password: password, rememberMe: rememberMe, namespace: 'namespace'});
+            expect(rest.calls[0].args[0].params.withCredentials).toEqual(true);
         });
 
         function triggerSuccess(status, data, onSuccess) {
-            $httpBackend.expect('POST', /.*/).respond(status, data);
             scope.submit({success: onSuccess});
-            $httpBackend.flush();
+            if(status != 412)
+                usecaseAdapter.calls[0].args[1]();
+            else
+                usecaseAdapter.calls[0].args[2].rejected(data);
         }
 
         it('on submit success', function () {
@@ -123,25 +126,10 @@ describe('checkpoint', function () {
             expect(location.path()).toEqual('/noredirect');
         });
 
-        it('on submit rejected', function () {
-            triggerSuccess(412, payload);
-
-            expect(ctrl.status).toEqual(412);
-            expect(ctrl.payload).toEqual(payload);
-        });
-
         it('expose rejection status', function () {
-            expect(scope.rejected()).toEqual(false);
-            ctrl.status = 412;
+            expect(scope.rejected()).toBeUndefined();
+            ctrl.rejected = true;
             expect(scope.rejected()).toEqual(true);
-        });
-
-        it('expose rejection violations', function () {
-            triggerSuccess(412, {credentials: ['mismatch']});
-
-            expect(scope.violations).toEqual([
-                {context: 'credentials', cause: 'mismatch'}
-            ]);
         });
     });
 
@@ -153,14 +141,8 @@ describe('checkpoint', function () {
         }));
 
         it('on submit send post request', function () {
-            $httpBackend.expect('POST', baseUri + 'api/checkpoint', {username: username, password: password, rememberMe: rememberMe}).respond(200);
-
-            scope.username = username;
-            scope.password = password;
-            scope.rememberMe = rememberMe;
             scope.submit();
-
-            $httpBackend.flush();
+            expect(rest.calls[0].args[0].params.url).toEqual(baseUri + 'api/checkpoint');
         });
     });
 

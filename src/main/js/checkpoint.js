@@ -9,7 +9,7 @@ angular.module('checkpoint', ['ngRoute', 'config'])
     .directive('isAuthenticated', IsAuthenticatedDirectiveFactory)
     .directive('isUnauthenticated', IsUnauthenticatedDirectiveFactory)
     .directive('authenticatedWithRealm', AuthenticatedWithRealmDirectiveFactory)
-    .controller('SigninController', ['$scope', '$http', '$location', 'config', 'topicMessageDispatcher', SigninController])
+    .controller('SigninController', ['$scope', 'usecaseAdapterFactory', 'restServiceHandler', '$http', '$location', 'config', 'topicMessageDispatcher', SigninController])
     .controller('AccountMetadataController', ['$scope', 'topicRegistry', 'fetchAccountMetadata', 'authRequiredPresenter', AccountMetadataController])
     .controller('RegistrationController', ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', '$location', RegistrationController])
     .config(['$routeProvider', function ($routeProvider) {
@@ -29,7 +29,7 @@ function SignoutController($scope, $http, topicMessageDispatcher, config) {
 }
 SignoutController.$inject = ['$scope', '$http', 'topicMessageDispatcher', 'config'];
 
-function SigninController($scope, $http, $location, config, topicMessageDispatcher) {
+function SigninController($scope, usecaseAdapterFactory, restServiceHandler, $http, $location, config, topicMessageDispatcher) {
     var self = this;
     self.config = {};
 
@@ -49,30 +49,30 @@ function SigninController($scope, $http, $location, config, topicMessageDispatch
             if(args && args.success) args.success();
         };
 
-        var onErrorCallback = function (payload, status) {
-            var toViolations = function (payload) {
-                return Object.keys(payload).map(function (it) {
-                    return {context: it, cause: payload[it][0]}
-                });
-            };
-
-            self.status = status;
-            self.payload = payload;
-            if (status == 412) $scope.violations = toViolations(payload);
+        var ctx = usecaseAdapterFactory($scope, onSuccessCallback, {
+            rejected:function() {
+                self.rejected = true
+            }
+        });
+        var baseUri = config.baseUri || '';
+        ctx.params = {
+            url: baseUri + 'api/checkpoint',
+            method: 'POST',
+            data: {
+                username: $scope.username,
+                password: $scope.password,
+                rememberMe: $scope.rememberMe,
+                namespace: config.namespace
+            },
+            withCredentials:true
         };
 
-        $http.post((config.baseUri || '') + 'api/checkpoint', {
-            username: $scope.username,
-            password: $scope.password,
-            rememberMe: $scope.rememberMe,
-            namespace: config.namespace
-        }, {
-            withCredentials: true
-        }).success(onSuccessCallback).error(onErrorCallback);
+        self.rejected = false;
+        restServiceHandler(ctx);
     };
 
     $scope.rejected = function () {
-        return self.status == 412;
+        return self.rejected;
     };
 }
 
