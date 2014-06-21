@@ -546,6 +546,45 @@ describe('checkpoint', function () {
         });
     });
 
+    describe('checkpointIsAuthenticated directive', function () {
+        var directive, registry, response;
+
+        beforeEach(inject(function () {
+            response = undefined;
+            registry = function (scope, topic, listener) {
+                registry[topic] = listener;
+            };
+            var usecase = function (it) {
+                response = it;
+            };
+            directive = CheckpointIsAuthenticatedDirectiveFactory(registry, usecase);
+            scope = {};
+            directive(scope);
+        }));
+
+        it('link trigger usecase', function () {
+            expect(response).toBeDefined();
+        });
+
+        it('unauthorized', function () {
+            response.unauthorized();
+            expect(scope.authenticated).toEqual(false);
+        });
+
+        it('authenticated', function () {
+            response.ok();
+            expect(scope.authenticated).toEqual(true);
+        });
+
+        ['checkpoint.signin', 'checkpoint.signout'].forEach(function (topic) {
+            it('handle ' + topic + ' notification', function () {
+                response = undefined;
+                registry[topic]('ok');
+                expect(response).toBeDefined();
+            });
+        });
+    });
+
     describe('AuthenticatedWithRealmDirective', function() {
         var directive;
         var usecaseCalled;

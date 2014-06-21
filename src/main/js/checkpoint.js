@@ -6,6 +6,7 @@ angular.module('checkpoint', ['ngRoute', 'config'])
     .factory('authRequiredPresenter', ['config', '$location', '$routeParams', AuthRequiredPresenterFactory])
     .directive('checkpointPermission', CheckpointHasDirectiveFactory)
     .directive('checkpointPermissionFor', CheckpointPermissionForDirectiveFactory)
+    .directive('checkpointIsAuthenticated', ['ngRegisterTopicHandler', 'fetchAccountMetadata', CheckpointIsAuthenticatedDirectiveFactory])
     .directive('isAuthenticated', IsAuthenticatedDirectiveFactory)
     .directive('isUnauthenticated', IsUnauthenticatedDirectiveFactory)
     .directive('authenticatedWithRealm', AuthenticatedWithRealmDirectiveFactory)
@@ -243,6 +244,30 @@ function CheckpointPermissionForDirectiveFactory(ngRegisterTopicHandler, activeU
     }
 }
 
+function CheckpointIsAuthenticatedDirectiveFactory(ngRegisterTopicHandler, fetchAccountMetadata) {
+    return function (scope) {
+        var init = function () {
+            fetchAccountMetadata({
+                ok: function () {
+                    scope.authenticated = true
+                },
+                unauthorized: function () {
+                    scope.authenticated = false
+                }
+            })
+        };
+        init();
+
+        ['checkpoint.signin', 'checkpoint.signout'].forEach(function (topic) {
+            ngRegisterTopicHandler(scope, topic, function () {
+                init();
+            });
+        });
+
+    }
+}
+
+// @deprecated use CheckpointIsAuthenticated directive instead
 function IsAuthenticatedDirectiveFactory(fetchAccountMetadata) {
     return {
         restrict: 'E',
@@ -262,6 +287,7 @@ function IsAuthenticatedDirectiveFactory(fetchAccountMetadata) {
     }
 }
 
+// @deprecated use CheckpointIsAuthenticated directive instead
 function IsUnauthenticatedDirectiveFactory(fetchAccountMetadata) {
     return {
         restrict: 'E',
