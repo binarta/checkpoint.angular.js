@@ -517,8 +517,12 @@ describe('checkpoint', function () {
             };
             directive = CheckpointPermissionForDirectiveFactory(registry, usecase);
             scope = {};
-            directive(scope, null, {checkpointPermissionFor: 'permission'});
+            directive.link(scope, null, {checkpointPermissionFor: 'permission'});
         }));
+
+        it('directive should create a child scope', function () {
+            expect(directive.scope).toEqual(true);
+        });
 
         it('link trigger usecase', function () {
             expect(response).toBeDefined();
@@ -559,8 +563,12 @@ describe('checkpoint', function () {
             };
             directive = CheckpointIsAuthenticatedDirectiveFactory(registry, usecase);
             scope = {};
-            directive(scope);
+            directive.link(scope);
         }));
+
+        it('directive should create a child scope', function () {
+            expect(directive.scope).toEqual(true);
+        });
 
         it('link trigger usecase', function () {
             expect(response).toBeDefined();

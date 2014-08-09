@@ -223,48 +223,53 @@ function CheckpointHasDirectiveFactory(ngRegisterTopicHandler, activeUserHasPerm
 }
 
 function CheckpointPermissionForDirectiveFactory(ngRegisterTopicHandler, activeUserHasPermission) {
-    return function (scope, el, attrs) {
-        var init = function () {
-            activeUserHasPermission({
-                no: function () {
-                    scope.permitted = false;
-                },
-                yes: function () {
-                    scope.permitted = true;
-                }
-            }, attrs.checkpointPermissionFor);
-        };
-        init();
+    return {
+        scope: true,
+        link: function (scope, el, attrs) {
+            var init = function () {
+                activeUserHasPermission({
+                    no: function () {
+                        scope.permitted = false;
+                    },
+                    yes: function () {
+                        scope.permitted = true;
+                    }
+                }, attrs.checkpointPermissionFor);
+            };
+            init();
 
-        ['checkpoint.signin', 'checkpoint.signout'].forEach(function (topic) {
-            ngRegisterTopicHandler(scope, topic, function (msg) {
-                init();
+            ['checkpoint.signin', 'checkpoint.signout'].forEach(function (topic) {
+                ngRegisterTopicHandler(scope, topic, function (msg) {
+                    init();
+                });
             });
-        });
-    }
+        }
+    };
 }
 
 function CheckpointIsAuthenticatedDirectiveFactory(ngRegisterTopicHandler, fetchAccountMetadata) {
-    return function (scope) {
-        var init = function () {
-            fetchAccountMetadata({
-                ok: function () {
-                    scope.authenticated = true
-                },
-                unauthorized: function () {
-                    scope.authenticated = false
-                }
-            })
-        };
-        init();
+    return {
+        scope: true,
+        link: function (scope) {
+            var init = function () {
+                fetchAccountMetadata({
+                    ok: function () {
+                        scope.authenticated = true
+                    },
+                    unauthorized: function () {
+                        scope.authenticated = false
+                    }
+                })
+            };
+            init();
 
-        ['checkpoint.signin', 'checkpoint.signout'].forEach(function (topic) {
-            ngRegisterTopicHandler(scope, topic, function () {
-                init();
+            ['checkpoint.signin', 'checkpoint.signout'].forEach(function (topic) {
+                ngRegisterTopicHandler(scope, topic, function () {
+                    init();
+                });
             });
-        });
-
-    }
+        }
+    };
 }
 
 // @deprecated use CheckpointIsAuthenticated directive instead
