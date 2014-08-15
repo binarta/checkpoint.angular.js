@@ -146,10 +146,111 @@ describe('checkpoint', function () {
         });
     });
 
+    describe('AccountService', function () {
+        var account, rootScope, topics;
+
+        beforeEach(inject(function (_account_, $rootScope, topicRegistryMock) {
+            account = _account_;
+            rootScope = $rootScope;
+            config.namespace = 'namespace';
+            config.baseUri = 'base/';
+            topics = topicRegistryMock;
+        }));
+
+        describe('get metadata', function () {
+            var data = {foo: 'bar'},
+                result;
+
+            function callGetMetadata() {
+                $httpBackend.expect('GET', 'base/api/account/metadata', null, function(headers) {
+                    return headers['X-Namespace'] == config.namespace;
+                }).respond(data);
+                account.getMetadata().then(function (metadata) {
+                    result = metadata;
+                });
+                $httpBackend.flush();
+            }
+
+            beforeEach(function () {
+                callGetMetadata();
+            });
+
+            it('first getMetadata call', function () {
+                expect(result).toEqual(data);
+            });
+
+            it('second getMetadata call will return a cached promise using memoization', function () {
+                result = undefined;
+                account.getMetadata().then(function (metadata) {
+                    result = metadata;
+                });
+                rootScope.$apply();
+
+                expect(result).toEqual(data);
+            });
+
+            it('on signin should remove cached promise', function () {
+                topics['checkpoint.signin']('ok');
+
+                callGetMetadata();
+            });
+
+            it('on signout should remove cached promise', function () {
+                topics['checkpoint.signout']('ok');
+
+                callGetMetadata();
+            });
+        });
+
+        describe('get permissions', function () {
+            var metadata = {principle: 'foo'},
+                permissions = {permission: 'bar'},
+                result;
+
+            function callGetPermissions() {
+                $httpBackend.expect('GET', 'base/api/account/metadata').respond(metadata);
+                $httpBackend.expect('POST', 'base/api/query/permission/list', {filter: {namespace: config.namespace}}).respond(permissions);
+                account.getPermissions().then(function (permissions) {
+                    result = permissions;
+                });
+                $httpBackend.flush();
+            }
+
+            beforeEach(function () {
+                callGetPermissions();
+            });
+
+            it('first getPermissions call', function () {
+                expect(result).toEqual(permissions);
+            });
+
+            it('second getPermissions call will return a cached promise using memoization', function () {
+                result = undefined;
+                account.getPermissions().then(function (permissions) {
+                    result = permissions;
+                });
+                rootScope.$apply();
+
+                expect(result).toEqual(permissions);
+            });
+
+            it('on signin should remove cached promise', function () {
+                topics['checkpoint.signin']('ok');
+
+                callGetPermissions();
+            });
+
+            it('on signout should remove cached promise', function () {
+                topics['checkpoint.signout']('ok');
+
+                callGetPermissions();
+            });
+        });
+    });
+
     describe('FetchAccountMetadata', function () {
         var baseUri = 'base-uri/';
         var usecase;
-        var registry;
         var payload = {};
         var response = {
             unauthorized: function () {
@@ -193,12 +294,6 @@ describe('checkpoint', function () {
 
             it('status is unauthorized', assertUnauthorized);
 
-            it('results are cached', function () {
-                response.status = undefined;
-                usecase(response);
-                assertUnauthorized();
-            });
-
             describe('and checkpoint.signin event raised', function () {
                 beforeEach(inject(function (topicRegistryMock) {
                     topicRegistryMock['checkpoint.signin']('ok');
@@ -219,13 +314,6 @@ describe('checkpoint', function () {
             });
 
             it('status is ok', assertOk);
-
-            it('results are cached', function () {
-                response.status = undefined;
-                response.metadata = undefined;
-                usecase(response);
-                assertOk();
-            });
 
             describe('and checkpoint.signout event raised', function () {
                 beforeEach(inject(function (topicRegistryMock) {
@@ -314,140 +402,47 @@ describe('checkpoint', function () {
 
     describe('ActiveUserHasPermission', function () {
         var usecase;
-        var response;
-        var r;
-        var metadata = {principal: 'active-principal'};
+        var r, response;
+        var account;
+        var metadata = {principal: 'active-principal'},
+            permissions = [
+                {name: 'foo'},
+                {name: 'bar'},
+                {name: 'permission'}
+            ];
 
-        beforeEach(inject(function ($http, topicRegistry) {
+        beforeEach(inject(function (activeUserHasPermission, _account_) {
+            config.baseUri = 'base-uri/';
+            config.namespace = 'namespace';
+            account = _account_;
             r = {
                 yes: function () {
-                    r.status = true;
+                    response = true;
                 },
                 no: function () {
-                    r.status = false;
+                    response = false;
                 }
             };
-            response = undefined;
-            var fetchAccountMetadata = function (it) {
-                response = it
-            };
-            usecase = ActiveUserHasPermission(fetchAccountMetadata, topicRegistry, $http, {namespace: 'namespace'});
+            usecase = activeUserHasPermission;
         }));
 
-        function assertRejected() {
-            expect(r.status).toEqual(false);
+        function withPermission(permission) {
+            $httpBackend.expect('GET', config.baseUri + 'api/account/metadata').respond(metadata);
+            $httpBackend.expect('POST', config.baseUri + 'api/query/permission/list').respond(permissions);
+            usecase(r, permission);
+            $httpBackend.flush();
         }
 
-        function assertAccepted() {
-            expect(r.status).toEqual(true);
-        }
+        it('and unknown permission is rejected', function () {
+            withPermission('unknown');
 
-        it('subscribes for config.initialized notifications', function () {
-            expect(registry['config.initialized']).toBeDefined();
+            expect(response).toEqual(false);
         });
 
-        it('subscribes for checkpoint.signin notifications', function () {
-            expect(registry['checkpoint.signin']).toBeDefined();
-        });
+        it('with known permission is accepted', function () {
+            withPermission('permission');
 
-        describe('with account metadata', function () {
-            beforeEach(function () {
-                usecase(r, 'permission');
-            });
-
-            describe('and signed out', function () {
-                beforeEach(function () {
-                    response.unauthorized();
-                });
-
-                it('permission rejected', assertRejected);
-            });
-
-            describe('and signed in', function () {
-
-                function withPermission(permission, callback) {
-                    return function () {
-                        $httpBackend.expect('POST', 'api/query/permission/list', {filter: {namespace: 'namespace', owner: metadata.principal}}).respond(200, [
-                            {name: permission}
-                        ]);
-                        response.ok(metadata);
-                        $httpBackend.flush();
-                        if (callback) callback();
-                    }
-                }
-
-                it('query permissions', withPermission('irrelevant'));
-
-                describe('and unknown permissions', function () {
-                    beforeEach(withPermission('unknown'));
-
-                    it('is rejected', assertRejected);
-
-                    it('is cached', function () {
-                        r.status = undefined;
-                        usecase(r, 'permission');
-                        response.ok(metadata);
-                        assertRejected();
-                    });
-                });
-
-                describe('and known permissions', function () {
-                    beforeEach(withPermission('permission'));
-
-                    it('with known permissions are accepted', assertAccepted);
-
-                    it('is cached', function () {
-                        r.status = undefined;
-                        usecase(r, 'permission');
-                        response.ok(metadata);
-                        assertAccepted();
-                    });
-
-                    describe('on signin', function() {
-                        beforeEach(function() {
-                            r.status = undefined;
-                            registry['checkpoint.signin']();
-                            usecase(r, 'permission');
-                        });
-                        beforeEach(withPermission('modified'));
-
-                        it('permission cache is cleared', function() {
-                            assertRejected();
-                        })
-                    });
-                });
-
-            });
-
-            describe('and config.initialized notification received with baseUri', function () {
-                var config = {
-                    baseUri: 'http://host/context/'
-                };
-
-                beforeEach(function () {
-                    registry['config.initialized'](config);
-                });
-
-                it('and signed in', function () {
-                    $httpBackend.expect('POST', config.baseUri + 'api/query/permission/list', {filter: {namespace: 'namespace', owner: metadata.principal}}).respond(200, []);
-                    response.ok(metadata);
-                    $httpBackend.flush();
-                });
-            });
-
-            describe('and config.initialized notification received without baseUri', function () {
-                var config = {};
-
-                beforeEach(function () {
-                    registry['config.initialized'](config);
-                });
-
-                it('and signed in', function () {
-                    $httpBackend.expect('POST', 'api/query/permission/list', {filter: {namespace: 'namespace', owner: metadata.principal}}).respond(200, []);
-                    response.ok(metadata);
-                    $httpBackend.flush();
-                });
-            });
+            expect(response).toEqual(true);
         });
     });
 

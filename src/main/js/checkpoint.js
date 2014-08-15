@@ -1,6 +1,7 @@
 angular.module('checkpoint', ['ngRoute', 'config'])
-    .factory('fetchAccountMetadata', ['$http', 'config', 'topicRegistry', FetchAccountMetadata])
-    .factory('activeUserHasPermission', ['fetchAccountMetadata', 'topicRegistry', '$http', 'config', ActiveUserHasPermission])
+    .service('account', ['$http', 'config', 'topicRegistry', AccountService])
+    .factory('fetchAccountMetadata', ['account', FetchAccountMetadata])
+    .factory('activeUserHasPermission', ['account', ActiveUserHasPermission])
     .factory('registrationRequestMessageMapper', ['config', 'registrationRequestMessageMapperRegistry', RegistrationRequestMessageMapperFactory])
     .factory('registrationRequestMessageMapperRegistry', [RegistrationRequestMessageMapperRegistry])
     .factory('authRequiredPresenter', ['config', '$location', '$routeParams', AuthRequiredPresenterFactory])
@@ -77,45 +78,61 @@ function SigninController($scope, usecaseAdapterFactory, restServiceHandler, $ht
     };
 }
 
-function FetchAccountMetadata($http, config, topicRegistry) {
-    var cache, cached;
+function AccountService($http, config, topicRegistry) {
+    var metadataPromise, permissionPromise;
 
-    var clearCache = function () {
-        cache = {};
-        cached = false;
-    };
-    clearCache();
+    ['checkpoint.signin', 'checkpoint.signout'].forEach(function (topic) {
+        topicRegistry.subscribe(topic, function () {
+            metadataPromise = undefined;
+            permissionPromise = undefined;
+        });
+    });
 
-    topicRegistry.subscribe('checkpoint.signin', clearCache);
-    topicRegistry.subscribe('checkpoint.signout', clearCache);
-
-    var usecase = function (it) {
-        var onSuccess = function (payload) {
-            cached = true;
-            cache.payload = payload;
-            it.ok(payload);
-        };
-        var onError = function (payload, status) {
-            cached = true;
-            cache.payload = payload;
-            cache.status = status;
-            it.unauthorized();
-        };
-
-        if (!cached) {
-            var path = config.baseUri || '';
-            $http.get(path + 'api/account/metadata', {
+    function getMetadata() {
+        if(angular.isUndefined(metadataPromise)) {
+            metadataPromise = $http.get(config.baseUri + 'api/account/metadata', {
                 withCredentials: true,
                 headers: {
                     'X-Namespace': config.namespace
                 }
-            }).success(onSuccess).error(onError);
-        } else {
-            !cache.status ? onSuccess(cache.payload) : onError(cache.payload, cache.status);
+            }).then(function (metadata) {
+                return metadata.data;
+            });
         }
-    };
+        return metadataPromise;
+    }
 
-    return  usecase
+    function getPermissions() {
+        if(angular.isUndefined(permissionPromise)) {
+            permissionPromise = getMetadata().then(function (metadata) {
+                return $http.post(config.baseUri + 'api/query/permission/list', {
+                        filter: {
+                            namespace: config.namespace,
+                            owner: metadata.principal
+                        }
+                    },{withCredentials: true})
+                    .then(function (permissions) {
+                        return permissions.data;
+                    });
+            });
+        }
+        return permissionPromise;
+    }
+
+    return {
+        getMetadata: getMetadata,
+        getPermissions: getPermissions
+    };
+}
+
+function FetchAccountMetadata(account) {
+    return function (it) {
+        account.getMetadata().then(function(metadata) {
+            it.ok(metadata);
+        }, function() {
+            it.unauthorized();
+        });
+    };
 }
 
 function AccountMetadataController($scope, topicRegistry, fetchAccountMetadata, authRequiredPresenter) {
@@ -153,45 +170,16 @@ function AccountMetadataController($scope, topicRegistry, fetchAccountMetadata, 
         });
 }
 
-function ActiveUserHasPermission(fetchAccountMetadata, topicRegistry, $http, config) {
-    var cache, cached;
-    var baseUri = '';
-
-    var clearCache = function () {
-        cache = [];
-        cached = false;
-    };
-    clearCache();
-
-    topicRegistry.subscribe('checkpoint.signin', clearCache);
-
-    topicRegistry.subscribe('config.initialized', function (config) {
-        baseUri = config.baseUri || '';
-    });
-
+function ActiveUserHasPermission(account) {
     return function (response, permission) {
-        fetchAccountMetadata({
-            unauthorized: function () {
-                response.no();
-            },
-            ok: function (metadata) {
-                var onSuccess = function (permissions) {
-                    cache = permissions;
-                    cached = true;
-                    permissions.reduce(function (result, it) {
-                        return result || it.name == permission
-                    }, false) ? response.yes() : response.no();
-                };
-
-                if (!cached) {
-                    $http.post(baseUri + 'api/query/permission/list', {filter: {namespace: config.namespace, owner: metadata.principal}}, {
-                        withCredentials: true
-                    }).success(onSuccess);
-                } else
-                    onSuccess(cache);
-            }
+        account.getPermissions().then(function(permissions) {
+            permissions.reduce(function (result, it) {
+                return result || it.name == permission
+            }, false) ? response.yes() : response.no();
+        }, function() {
+            response.no();
         });
-    }
+    };
 }
 
 // @deprecated Try to use the less intrusive checkpointPermissionFor directive
