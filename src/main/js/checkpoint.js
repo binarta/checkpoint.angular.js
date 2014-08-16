@@ -1,5 +1,5 @@
 angular.module('checkpoint', ['ngRoute', 'config'])
-    .service('account', ['$http', 'config', 'topicRegistry', AccountService])
+    .service('account', ['$http', '$q', 'config', 'topicRegistry', AccountService])
     .factory('fetchAccountMetadata', ['account', 'ngRegisterTopicHandler', FetchAccountMetadata])
     .factory('activeUserHasPermission', ['account', 'ngRegisterTopicHandler', ActiveUserHasPermission])
     .factory('registrationRequestMessageMapper', ['config', 'registrationRequestMessageMapperRegistry', RegistrationRequestMessageMapperFactory])
@@ -78,7 +78,7 @@ function SigninController($scope, usecaseAdapterFactory, restServiceHandler, $ht
     };
 }
 
-function AccountService($http, config, topicRegistry) {
+function AccountService($http, $q, config, topicRegistry) {
     var metadataPromise, permissionPromise;
 
     ['checkpoint.signin', 'checkpoint.signout'].forEach(function (topic) {
@@ -96,6 +96,7 @@ function AccountService($http, config, topicRegistry) {
                     'X-Namespace': config.namespace
                 }
             }).then(function (metadata) {
+                if (!metadata.data.principal) return $q.reject();
                 return metadata.data;
             });
         }

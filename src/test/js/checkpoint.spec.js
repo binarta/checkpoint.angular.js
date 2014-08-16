@@ -158,10 +158,11 @@ describe('checkpoint', function () {
         }));
 
         describe('get metadata', function () {
-            var data = {foo: 'bar'},
+            var validData = {principal: 'foo'},
+                invalidData = {principal: null},
                 result;
 
-            function callGetMetadata() {
+            function callGetMetadata(data) {
                 $httpBackend.expect('GET', 'base/api/account/metadata', null, function(headers) {
                     return headers['X-Namespace'] == config.namespace;
                 }).respond(data);
@@ -171,45 +172,52 @@ describe('checkpoint', function () {
                 $httpBackend.flush();
             }
 
-            beforeEach(function () {
-                callGetMetadata();
+            it('when metadata is invalid', function () {
+                callGetMetadata(invalidData);
+
+                expect(result).toBeUndefined();
             });
 
             it('first getMetadata call', function () {
-                expect(result).toEqual(data);
+                callGetMetadata(validData);
+
+                expect(result).toEqual(validData);
             });
 
             it('second getMetadata call will return a cached promise using memoization', function () {
+                callGetMetadata(validData);
                 result = undefined;
                 account.getMetadata().then(function (metadata) {
                     result = metadata;
                 });
                 rootScope.$apply();
 
-                expect(result).toEqual(data);
+                expect(result).toEqual(validData);
             });
 
             it('on signin should remove cached promise', function () {
+                callGetMetadata(validData);
                 topics['checkpoint.signin']('ok');
 
-                callGetMetadata();
+                callGetMetadata(validData);
             });
 
             it('on signout should remove cached promise', function () {
+                callGetMetadata(validData);
                 topics['checkpoint.signout']('ok');
 
-                callGetMetadata();
+                callGetMetadata(validData);
             });
         });
 
         describe('get permissions', function () {
-            var metadata = {principle: 'foo'},
+            var metadata = {principal: 'foo'},
                 permissions = {permission: 'bar'},
                 result;
 
             function callGetPermissions() {
                 $httpBackend.expect('GET', 'base/api/account/metadata').respond(metadata);
-                $httpBackend.expect('POST', 'base/api/query/permission/list', {filter: {namespace: config.namespace}}).respond(permissions);
+                $httpBackend.expect('POST', 'base/api/query/permission/list', {filter: {namespace: config.namespace, owner: 'foo'}}).respond(permissions);
                 account.getPermissions().then(function (permissions) {
                     result = permissions;
                 });
@@ -251,7 +259,7 @@ describe('checkpoint', function () {
     describe('FetchAccountMetadata', function () {
         var baseUri = 'base-uri/';
         var usecase;
-        var payload = {};
+        var payload = {principal: 'foo'};
         var response = {
             unauthorized: function () {
                 response.status = 'unauthorized';
