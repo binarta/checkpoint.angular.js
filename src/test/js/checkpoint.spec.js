@@ -261,9 +261,13 @@ describe('checkpoint', function () {
                 response.metadata = metadata;
             }
         };
+        var topics;
 
-        beforeEach(inject(function (fetchAccountMetadata) {
+        beforeEach(inject(function (fetchAccountMetadata, topicRegistryMock) {
             usecase = fetchAccountMetadata;
+            topics = topicRegistryMock;
+            response.status = '';
+            response.metadata = {};
         }));
 
         function assertUnauthorized() {
@@ -295,12 +299,12 @@ describe('checkpoint', function () {
             it('status is unauthorized', assertUnauthorized);
 
             describe('and checkpoint.signin event raised', function () {
-                beforeEach(inject(function (topicRegistryMock) {
-                    topicRegistryMock['checkpoint.signin']('ok');
+                beforeEach(function () {
+                    topics['checkpoint.signin']('ok');
                     $httpBackend.expect('GET', /.*/).respond(200, payload);
                     usecase(response);
                     $httpBackend.flush();
-                }));
+                });
 
                 it('status is ok', assertOk);
             });
@@ -316,14 +320,53 @@ describe('checkpoint', function () {
             it('status is ok', assertOk);
 
             describe('and checkpoint.signout event raised', function () {
-                beforeEach(inject(function (topicRegistryMock) {
-                    topicRegistryMock['checkpoint.signout']('ok');
+                beforeEach(function () {
+                    topics['checkpoint.signout']('ok');
                     $httpBackend.expect('GET', /.*/).respond(401);
                     usecase(response);
                     $httpBackend.flush();
-                }));
+                });
 
-                it('status is unauthorized', assertUnauthorized);
+                it('status is unauthorized', function () {
+                    assertUnauthorized();
+                });
+            });
+        });
+
+        describe('and response.scope is given', function () {
+            var rootScope;
+            beforeEach(inject(function ($rootScope) {
+                rootScope = $rootScope;
+                response.scope = $rootScope.$new();
+            }));
+
+            describe('when authenticated', function () {
+                beforeEach(function () {
+                    $httpBackend.expect('GET', /.*/).respond(200, payload);
+                    usecase(response);
+                    $httpBackend.flush();
+                });
+
+                describe('and checkpoint.signout event raised', function () {
+                    beforeEach(function () {
+                        topics['checkpoint.signout']('ok');
+                    });
+
+                    it('status is unauthorized', function () {
+                        assertUnauthorized();
+                    });
+
+                    describe('and checkpoint.signin event raised', function () {
+                        beforeEach(function () {
+                            topics['checkpoint.signin']('ok');
+                            rootScope.$apply();
+                        });
+
+                        it('status is ok', function () {
+                            assertOk();
+                        });
+                    });
+                });
             });
         });
     });
@@ -333,32 +376,26 @@ describe('checkpoint', function () {
         var payload = {};
         var presenter = jasmine.createSpy('presenter');
 
-        beforeEach(inject(function ($controller, $http) {
+        beforeEach(inject(function ($controller, topicRegistryMock) {
             response = undefined;
-            registry = {subscribe: function (topic, listener) {
-                registry[topic] = listener;
-            }};
+            registry = topicRegistryMock;
             var usecase = function (it) {
                 response = it
             };
             ctrl = $controller(AccountMetadataController, {$scope: scope, topicRegistry: registry, fetchAccountMetadata: usecase, authRequiredPresenter: presenter});
         }));
 
-        ['app.start', 'checkpoint.signin', 'checkpoint.signout'].forEach(function (topic) {
-            it('handle checkpoint.signin notification', function () {
-                registry[topic]('ok');
-            });
+        it('scope is given to fetchAccountMetadata', function () {
+            expect(response.scope).toEqual(scope);
         });
 
         it('fetch metadata unauthorized', function () {
-            registry['app.start']();
             expect(scope.unauthorized()).toEqual(false);
             response.unauthorized();
             expect(scope.unauthorized()).toEqual(true);
         });
 
         it('fetch metadata success', function () {
-            registry['app.start']();
             ctrl.status = 'unauthorized';
             expect(scope.unauthorized()).toEqual(true);
             expect(scope.authorized()).toEqual(false);
@@ -410,11 +447,13 @@ describe('checkpoint', function () {
                 {name: 'bar'},
                 {name: 'permission'}
             ];
+        var topics;
 
-        beforeEach(inject(function (activeUserHasPermission, _account_) {
+        beforeEach(inject(function (activeUserHasPermission, _account_, topicRegistryMock) {
             config.baseUri = 'base-uri/';
             config.namespace = 'namespace';
             account = _account_;
+            response = undefined;
             r = {
                 yes: function () {
                     response = true;
@@ -423,6 +462,7 @@ describe('checkpoint', function () {
                     response = false;
                 }
             };
+            topics = topicRegistryMock;
             usecase = activeUserHasPermission;
         }));
 
@@ -443,6 +483,74 @@ describe('checkpoint', function () {
             withPermission('permission');
 
             expect(response).toEqual(true);
+        });
+
+        it('and response.no is not given', function () {
+            r.no = undefined;
+            withPermission('unknown');
+
+            expect(response).toBeUndefined();
+        });
+
+        it('and response.yes is not given', function () {
+            r.yes = undefined;
+            withPermission('permission');
+
+            expect(response).toBeUndefined();
+        });
+
+        describe('and scope is not given with response', function () {
+            describe('and usecase has triggered with known permission', function () {
+                beforeEach(function () {
+                    withPermission('permission');
+                });
+
+                describe('and signout', function () {
+                    beforeEach(function () {
+                        topics['checkpoint.signout']('ok');
+                    });
+
+                    it('permission is still accepted', function () {
+                        expect(response).toEqual(true);
+                    });
+                });
+            });
+        });
+
+        describe('and scope is given with response', function () {
+            var scope;
+
+            beforeEach(inject(function ($rootScope) {
+                scope = $rootScope.$new();
+                r.scope = scope;
+            }));
+
+            describe('and usecase has triggered', function () {
+                beforeEach(function () {
+                    withPermission('permission');
+                });
+
+                describe('and signout', function () {
+                    beforeEach(function () {
+                        topics['checkpoint.signout']('ok');
+                    });
+
+                    it('permission is rejected', function () {
+                        expect(response).toEqual(false);
+                    });
+
+                    describe('and sign back in', function () {
+                        beforeEach(inject(function ($rootScope) {
+                            topics['checkpoint.signin']('ok');
+                            $rootScope.$apply();
+                        }));
+
+                        it('permission is accepted', function () {
+                            expect(response).toEqual(true);
+                        });
+                    });
+                });
+            });
         });
     });
 
@@ -499,18 +607,15 @@ describe('checkpoint', function () {
     });
 
     describe('checkpointPermissionFor directive', function () {
-        var directive, registry, response, expectedPermission;
+        var directive, response, expectedPermission;
 
         beforeEach(inject(function () {
             response = undefined;
-            registry = function (scope, topic, listener) {
-                registry[topic] = listener;
-            };
             var usecase = function (it, permission) {
                 response = it;
                 expectedPermission = permission;
             };
-            directive = CheckpointPermissionForDirectiveFactory(registry, usecase);
+            directive = CheckpointPermissionForDirectiveFactory(usecase);
             scope = {};
             directive.link(scope, null, {checkpointPermissionFor: 'permission'});
         }));
@@ -524,6 +629,10 @@ describe('checkpoint', function () {
             expect(expectedPermission).toEqual('permission');
         });
 
+        it('scope is given to usecase', function () {
+            expect(response.scope).toEqual(scope);
+        });
+
         it('not permitted', function () {
             response.no();
             expect(scope.permitted).toEqual(false);
@@ -533,30 +642,17 @@ describe('checkpoint', function () {
             response.yes();
             expect(scope.permitted).toEqual(true);
         });
-
-        ['checkpoint.signin', 'checkpoint.signout'].forEach(function (topic) {
-            it('handle ' + topic + ' notification', function () {
-                response = undefined;
-                expectedPermission = undefined;
-                registry[topic]('ok');
-                expect(response).toBeDefined();
-                expect(expectedPermission).toEqual('permission');
-            });
-        });
     });
 
     describe('checkpointIsAuthenticated directive', function () {
-        var directive, registry, response;
+        var directive, response;
 
         beforeEach(inject(function () {
             response = undefined;
-            registry = function (scope, topic, listener) {
-                registry[topic] = listener;
-            };
             var usecase = function (it) {
                 response = it;
             };
-            directive = CheckpointIsAuthenticatedDirectiveFactory(registry, usecase);
+            directive = CheckpointIsAuthenticatedDirectiveFactory(usecase);
             scope = {};
             directive.link(scope);
         }));
@@ -579,12 +675,8 @@ describe('checkpoint', function () {
             expect(scope.authenticated).toEqual(true);
         });
 
-        ['checkpoint.signin', 'checkpoint.signout'].forEach(function (topic) {
-            it('handle ' + topic + ' notification', function () {
-                response = undefined;
-                registry[topic]('ok');
-                expect(response).toBeDefined();
-            });
+        it('scope is given to usecase', function () {
+            expect(response.scope).toEqual(scope);
         });
     });
 

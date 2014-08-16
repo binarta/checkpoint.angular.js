@@ -1,18 +1,18 @@
 angular.module('checkpoint', ['ngRoute', 'config'])
     .service('account', ['$http', 'config', 'topicRegistry', AccountService])
-    .factory('fetchAccountMetadata', ['account', FetchAccountMetadata])
-    .factory('activeUserHasPermission', ['account', ActiveUserHasPermission])
+    .factory('fetchAccountMetadata', ['account', 'ngRegisterTopicHandler', FetchAccountMetadata])
+    .factory('activeUserHasPermission', ['account', 'ngRegisterTopicHandler', ActiveUserHasPermission])
     .factory('registrationRequestMessageMapper', ['config', 'registrationRequestMessageMapperRegistry', RegistrationRequestMessageMapperFactory])
     .factory('registrationRequestMessageMapperRegistry', [RegistrationRequestMessageMapperRegistry])
     .factory('authRequiredPresenter', ['config', '$location', '$routeParams', AuthRequiredPresenterFactory])
     .directive('checkpointPermission', CheckpointHasDirectiveFactory)
-    .directive('checkpointPermissionFor', CheckpointPermissionForDirectiveFactory)
-    .directive('checkpointIsAuthenticated', ['ngRegisterTopicHandler', 'fetchAccountMetadata', CheckpointIsAuthenticatedDirectiveFactory])
+    .directive('checkpointPermissionFor', ['activeUserHasPermission', CheckpointPermissionForDirectiveFactory])
+    .directive('checkpointIsAuthenticated', ['fetchAccountMetadata', CheckpointIsAuthenticatedDirectiveFactory])
     .directive('isAuthenticated', IsAuthenticatedDirectiveFactory)
     .directive('isUnauthenticated', IsUnauthenticatedDirectiveFactory)
     .directive('authenticatedWithRealm', AuthenticatedWithRealmDirectiveFactory)
     .controller('SigninController', ['$scope', 'usecaseAdapterFactory', 'restServiceHandler', '$http', '$location', 'config', 'topicMessageDispatcher', SigninController])
-    .controller('AccountMetadataController', ['$scope', 'topicRegistry', 'fetchAccountMetadata', 'authRequiredPresenter', AccountMetadataController])
+    .controller('AccountMetadataController', ['$scope', 'ngRegisterTopicHandler', 'fetchAccountMetadata', 'authRequiredPresenter', AccountMetadataController])
     .controller('RegistrationController', ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', '$location', RegistrationController])
     .config(['$routeProvider', function ($routeProvider) {
         $routeProvider
@@ -125,30 +125,42 @@ function AccountService($http, config, topicRegistry) {
     };
 }
 
-function FetchAccountMetadata(account) {
-    return function (it) {
-        account.getMetadata().then(function(metadata) {
-            it.ok(metadata);
-        }, function() {
-            it.unauthorized();
-        });
+function FetchAccountMetadata(account, ngRegisterTopicHandler) {
+    return function (response) {
+        function getMetadata() {
+            account.getMetadata().then(function(metadata) {
+                response.ok(metadata);
+            }, function() {
+                response.unauthorized();
+            });
+        }
+        getMetadata();
+
+        if (response.scope) {
+            ngRegisterTopicHandler(response.scope, 'checkpoint.signout', function () {
+                response.unauthorized();
+            });
+
+            ngRegisterTopicHandler(response.scope, 'checkpoint.signin', function () {
+                getMetadata();
+            });
+        }
     };
 }
 
-function AccountMetadataController($scope, topicRegistry, fetchAccountMetadata, authRequiredPresenter) {
+function AccountMetadataController($scope, ngRegisterTopicHandler, fetchAccountMetadata, authRequiredPresenter) {
     var self = this;
 
-    var init = function () {
-        fetchAccountMetadata({
-            unauthorized: function () {
-                self.status = 'unauthorized';
-            },
-            ok: function (it) {
-                self.status = 'ok';
-                $scope.metadata = it;
-            }
-        });
-    };
+    fetchAccountMetadata({
+        unauthorized: function () {
+            self.status = 'unauthorized';
+        },
+        ok: function (it) {
+            self.status = 'ok';
+            $scope.metadata = it;
+        },
+        scope: $scope
+    });
 
     $scope.unauthorized = function () {
         return self.status == 'unauthorized';
@@ -158,27 +170,41 @@ function AccountMetadataController($scope, topicRegistry, fetchAccountMetadata, 
         return self.status == 'ok';
     };
 
-    [
-        {topic: 'app.start', command: init},
-        {topic: 'checkpoint.signin', command: init},
-        {topic: 'checkpoint.signout', command: init},
-        {topic: 'checkpoint.auth.required', command: function(target) {
-            authRequiredPresenter(target, $scope);
-        }}
-    ].forEach(function (it) {
-            topicRegistry.subscribe(it.topic, it.command);
-        });
+    ngRegisterTopicHandler($scope, 'checkpoint.auth.required', function(target) {
+        authRequiredPresenter(target, $scope);
+    });
 }
 
-function ActiveUserHasPermission(account) {
+function ActiveUserHasPermission(account, ngRegisterTopicHandler) {
     return function (response, permission) {
-        account.getPermissions().then(function(permissions) {
-            permissions.reduce(function (result, it) {
-                return result || it.name == permission
-            }, false) ? response.yes() : response.no();
-        }, function() {
-            response.no();
-        });
+        function no() {
+            if (response.no) response.no();
+        }
+
+        function yes() {
+            if (response.yes) response.yes();
+        }
+
+        function checkPermission() {
+            account.getPermissions().then(function(permissions) {
+                permissions.reduce(function (result, it) {
+                    return result || it.name == permission
+                }, false) ? yes() : no();
+            }, function() {
+                no();
+            });
+        }
+        checkPermission();
+
+        if (response.scope) {
+            ngRegisterTopicHandler(response.scope, 'checkpoint.signout', function () {
+                no();
+            });
+
+            ngRegisterTopicHandler(response.scope, 'checkpoint.signin', function () {
+                checkPermission();
+            });
+        }
     };
 }
 
@@ -210,51 +236,35 @@ function CheckpointHasDirectiveFactory(ngRegisterTopicHandler, activeUserHasPerm
     };
 }
 
-function CheckpointPermissionForDirectiveFactory(ngRegisterTopicHandler, activeUserHasPermission) {
+function CheckpointPermissionForDirectiveFactory(activeUserHasPermission) {
     return {
         scope: true,
         link: function (scope, el, attrs) {
-            var init = function () {
-                activeUserHasPermission({
-                    no: function () {
-                        scope.permitted = false;
-                    },
-                    yes: function () {
-                        scope.permitted = true;
-                    }
-                }, attrs.checkpointPermissionFor);
-            };
-            init();
-
-            ['checkpoint.signin', 'checkpoint.signout'].forEach(function (topic) {
-                ngRegisterTopicHandler(scope, topic, function (msg) {
-                    init();
-                });
-            });
+            activeUserHasPermission({
+                no: function () {
+                    scope.permitted = false;
+                },
+                yes: function () {
+                    scope.permitted = true;
+                },
+                scope: scope
+            }, attrs.checkpointPermissionFor);
         }
     };
 }
 
-function CheckpointIsAuthenticatedDirectiveFactory(ngRegisterTopicHandler, fetchAccountMetadata) {
+function CheckpointIsAuthenticatedDirectiveFactory(fetchAccountMetadata) {
     return {
         scope: true,
         link: function (scope) {
-            var init = function () {
-                fetchAccountMetadata({
-                    ok: function () {
-                        scope.authenticated = true
-                    },
-                    unauthorized: function () {
-                        scope.authenticated = false
-                    }
-                })
-            };
-            init();
-
-            ['checkpoint.signin', 'checkpoint.signout'].forEach(function (topic) {
-                ngRegisterTopicHandler(scope, topic, function () {
-                    init();
-                });
+            fetchAccountMetadata({
+                ok: function () {
+                    scope.authenticated = true
+                },
+                unauthorized: function () {
+                    scope.authenticated = false
+                },
+                scope: scope
             });
         }
     };
