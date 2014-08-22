@@ -864,4 +864,55 @@ describe('checkpoint', function () {
             });
         });
     });
+
+    describe('login modal directive', function () {
+        var element, html, $rootScope, scope, modalSpy, config;
+
+        beforeEach(inject(function (_$rootScope_, $compile, _modalSpy_, _config_) {
+            config = _config_;
+            $rootScope = _$rootScope_.$new();
+            html = '<div login-modal></div>';
+            element = angular.element(html);
+
+            modalSpy = _modalSpy_;
+            $compile(element)($rootScope);
+            scope = element.scope();
+            $rootScope.$digest();
+        }));
+
+        it('creates a child scope', function () {
+            expect($rootScope).toEqual(scope.$parent);
+        });
+
+        it('open is called with default config', function () {
+            scope.open();
+
+            expect(modalSpy).toEqual({
+                templateUrl: 'bower_components/binarta.checkpoint.angular/template/login-modal.html',
+                backdrop: 'static'
+            });
+        });
+
+        it('open is called with specific components dir in config', function () {
+            config.componentsDir = 'components';
+
+            scope.open();
+
+            expect(modalSpy).toEqual({
+                templateUrl: 'components/binarta.checkpoint.angular/template/login-modal.html',
+                backdrop: 'static'
+            });
+        });
+
+        it('open is called with specific styling in config', function () {
+            config.styling = 'bootstrap3';
+
+            scope.open();
+
+            expect(modalSpy).toEqual({
+                templateUrl: 'bower_components/binarta.checkpoint.angular/template/bootstrap3/login-modal.html',
+                backdrop: 'static'
+            });
+        });
+    });
 });

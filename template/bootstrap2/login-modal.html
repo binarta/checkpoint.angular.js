@@ -1,0 +1,59 @@
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true" ng-click="$dismiss()">×</button>
+    <h4 i18n code="login.modal.title" default="Login" class="inline">{{var}}</h4>
+</div>
+<div class="modal-body">
+    <div class="alert alert-error" ng-if="rejected()">
+        <div ng-repeat="v in violations">
+            <i18n code="{{v.context}}.{{v.cause}}" default="{{v.cause}}">
+                {{var}}
+            </i18n>
+        </div>
+    </div>
+    <div class="form">
+        <form class="form-horizontal"
+              ng-controller="SigninController" ng-init="init({noredirect:true})" ng-submit="submit({success: $close})">
+
+            <div class="alert alert-error" ng-if="!empty(violations)">
+                <div ng-repeat="v in violations">
+                    <i18n code="{{v.context}}.{{v.cause}}" default="{{v.context}}.{{v.cause}}">
+                        {{var}}
+                    </i18n>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label" for="binarta-login-username"
+                       i18n code="login.username.label" default="Username">
+                    {{var}}
+                </label>
+
+                <div class="controls">
+                    <input type="text" id="binarta-login-username" ng-model="username" required>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" for="binarta-login-password"
+                       i18n code="login.password.label" default="Password">
+                    {{var}}
+                </label>
+
+                <div class="controls">
+                    <input type="password" id="binarta-login-password" ng-model="password" required>
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="controls">
+                    <i18n code="login.link" default="Login" class="inline">
+                        <button type="submit" class="btn">{{var}}</button>
+                    </i18n>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="modal-footer">
+    <i18n code="recover.password.link" default="Recover Password">
+        <a href="#!/password/recover" ng-click="$dismiss()">{{var}}</a>
+    </i18n>
+</div>

@@ -1,4 +1,4 @@
-angular.module('checkpoint', ['ngRoute', 'config'])
+angular.module('checkpoint', ['ngRoute', 'config', 'ui.bootstrap.modal'])
     .service('account', ['$http', '$q', 'config', 'topicRegistry', AccountService])
     .factory('fetchAccountMetadata', ['account', 'ngRegisterTopicHandler', FetchAccountMetadata])
     .factory('activeUserHasPermission', ['account', 'ngRegisterTopicHandler', ActiveUserHasPermission])
@@ -11,6 +11,7 @@ angular.module('checkpoint', ['ngRoute', 'config'])
     .directive('isAuthenticated', IsAuthenticatedDirectiveFactory)
     .directive('isUnauthenticated', IsUnauthenticatedDirectiveFactory)
     .directive('authenticatedWithRealm', AuthenticatedWithRealmDirectiveFactory)
+    .directive('loginModal', ['config', '$modal', LoginModalDirectiveFactory])
     .controller('SigninController', ['$scope', 'usecaseAdapterFactory', 'restServiceHandler', '$http', '$location', 'config', 'topicMessageDispatcher', SigninController])
     .controller('AccountMetadataController', ['$scope', 'ngRegisterTopicHandler', 'fetchAccountMetadata', 'authRequiredPresenter', AccountMetadataController])
     .controller('RegistrationController', ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', '$location', RegistrationController])
@@ -394,4 +395,22 @@ function AuthRequiredPresenterFactory(config, $location, $routeParams) {
         config.onSigninSuccessTarget = target;
         $location.path($routeParams.locale ? '/' + $routeParams.locale + '/signin' : '/signin');
     }
+}
+
+function LoginModalDirectiveFactory(config, $modal) {
+    return {
+        restrict: 'A',
+        scope: true,
+        link: function (scope) {
+            scope.open = function () {
+                var componentsDir = config.componentsDir || 'bower_components';
+                var styling = config.styling ? config.styling + '/' : '';
+
+                $modal.open({
+                    templateUrl: componentsDir + '/binarta.checkpoint.angular/template/' + styling + 'login-modal.html',
+                    backdrop: 'static'
+                });
+            };
+        }
+    };
 }
