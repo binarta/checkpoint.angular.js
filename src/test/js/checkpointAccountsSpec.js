@@ -48,7 +48,7 @@ describe('checkpoint accounts', function () {
         });
 
         it('on change my password send POST request', function () {
-            $httpBackend.expect('POST', 'account/password', {
+            $httpBackend.expect('POST', 'api/account/password', {
                 currentPassword: currentPassword,
                 newPassword: newPassword
             }).respond(200, '');
@@ -67,7 +67,7 @@ describe('checkpoint accounts', function () {
 
         it('on change with base uri', function() {
             config.baseUri = 'http://host/context/'
-            $httpBackend.expect('POST', config.baseUri + 'account/password').respond(200);
+            $httpBackend.expect('POST', config.baseUri + 'api/account/password').respond(200);
             scope.submit();
             $httpBackend.flush();
         });

@@ -40,7 +40,7 @@ function ChangeMyPasswordController($scope, $http, config) {
     $scope.newPassword = '';
     $scope.submit = function () {
         resetStates();
-        $http.post((config.baseUri || '') + 'account/password', {
+        $http.post((config.baseUri || '') + 'api/account/password', {
             currentPassword: $scope.currentPassword,
             newPassword: $scope.newPassword
         }, {withCredentials:true}).success(onSuccess).error(onError);
