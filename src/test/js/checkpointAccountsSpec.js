@@ -66,7 +66,7 @@ describe('checkpoint accounts', function () {
         });
 
         it('on change with base uri', function() {
-            config.baseUri = 'http://host/context/'
+            config.baseUri = 'http://host/context/';
             $httpBackend.expect('POST', config.baseUri + 'api/account/password').respond(200);
             scope.submit();
             $httpBackend.flush();
@@ -206,6 +206,10 @@ describe('checkpoint accounts', function () {
             });
         });
 
+        it('when default locale do not use locale in uri', function () {
+            resetPresenter({locale: 'default'});
+            expect(location.path()).toEqual('/signin');
+        });
 
         it('fires system success', function() {
             resetPresenter(scope);
@@ -225,6 +229,11 @@ describe('checkpoint accounts', function () {
                 recoverPresenter({locale: locale});
                 expect(location.path()).toEqual((locale ? '/' + locale : '') + '/password/token/sent');
             });
+        });
+
+        it('when default locale do not use locale in uri', function () {
+            recoverPresenter({locale: 'default'});
+            expect(location.path()).toEqual('/password/token/sent');
         });
     });
 });

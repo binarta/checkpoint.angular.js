@@ -105,7 +105,7 @@ function ResetPasswordPresenterFactory($location, topicMessageDispatcher) {
 }
 
 function toLocale(scope) {
-    return scope.locale ? '/' + scope.locale : '';
+    return scope.locale ? ((scope.locale == 'default') ? '' : '/' + scope.locale) : '';
 }
 
 function RecoverPasswordPresenterFactory($location) {
