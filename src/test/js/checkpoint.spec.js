@@ -63,10 +63,25 @@ describe('checkpoint', function () {
     });
 
     describe('SigninController', function () {
+        describe('when username is in search part of url', function () {
+            beforeEach(inject(function ($location, $controller) {
+                $location.search('username', username);
+                ctrl = $controller(SigninController, {$scope: scope, config: config});
+            }));
+
+            it('username is on scope', function () {
+                expect(scope.username).toEqual(username);
+            });
+        });
+
         beforeEach(inject(function ($controller) {
             config = {namespace: 'namespace', redirectUri: 'redirect'};
             ctrl = $controller(SigninController, {$scope: scope, config: config});
         }));
+
+        it('username is not on scope', function () {
+            expect(scope.username).toBeUndefined();
+        });
 
         it('on submit send post request', function () {
             scope.username = username;

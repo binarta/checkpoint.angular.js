@@ -36,6 +36,8 @@ function SigninController($scope, usecaseAdapterFactory, restServiceHandler, $ht
     var self = this;
     self.config = {};
 
+    $scope.username = $location.search().username;
+
     $scope.init = function (config) {
         self.config = config;
     };
