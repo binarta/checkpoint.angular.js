@@ -47,22 +47,31 @@ describe('checkpoint accounts', function () {
             expect(scope.forbidden).toEqual(false);
         });
 
-        it('on change my password send POST request', function () {
-            $httpBackend.expect('POST', 'api/account/password', {
-                currentPassword: currentPassword,
-                newPassword: newPassword
-            }).respond(200, '');
+        describe('on change my password send POST request', function () {
+            beforeEach(function () {
+                $httpBackend.expect('POST', 'api/account/password', {
+                    currentPassword: currentPassword,
+                    newPassword: newPassword
+                }).respond(200, '');
 
-            scope.currentPassword = currentPassword;
-            scope.newPassword = newPassword;
-            scope.submit();
+                scope.currentPassword = currentPassword;
+                scope.newPassword = newPassword;
+                scope.submit();
 
-            expect(scope.ok).toEqual(false);
-            expect(scope.forbidden).toEqual(false);
+                expect(scope.ok).toEqual(false);
+                expect(scope.forbidden).toEqual(false);
 
-            $httpBackend.flush();
+                $httpBackend.flush();
+            });
 
-            expect(scope.ok).toEqual(true);
+            it('ok flag is true', function () {
+                expect(scope.ok).toEqual(true);
+            });
+
+            it('fields are reset', function () {
+                expect(scope.currentPassword).toEqual('');
+                expect(scope.newPassword).toEqual('');
+            });
         });
 
         it('on change with base uri', function() {

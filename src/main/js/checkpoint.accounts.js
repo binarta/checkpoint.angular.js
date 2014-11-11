@@ -19,6 +19,7 @@ angular.module("checkpoint.accounts", ['ngRoute'])
 function ChangeMyPasswordController($scope, $http, config) {
     var onSuccess = function () {
         $scope.ok = true;
+        resetFields();
     };
 
     var onError = function (body, status) {
@@ -36,8 +37,12 @@ function ChangeMyPasswordController($scope, $http, config) {
         $scope.forbidden = false;
     };
 
-    $scope.currentPassword = '';
-    $scope.newPassword = '';
+    var resetFields = function () {
+        $scope.currentPassword = '';
+        $scope.newPassword = '';
+    };
+    resetFields();
+
     $scope.submit = function () {
         resetStates();
         $http.post((config.baseUri || '') + 'api/account/password', {
