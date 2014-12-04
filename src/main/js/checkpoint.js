@@ -5,6 +5,7 @@ angular.module('checkpoint', ['ngRoute', 'config', 'ui.bootstrap.modal'])
     .factory('registrationRequestMessageMapper', ['config', 'registrationRequestMessageMapperRegistry', RegistrationRequestMessageMapperFactory])
     .factory('registrationRequestMessageMapperRegistry', [RegistrationRequestMessageMapperRegistry])
     .factory('authRequiredPresenter', ['config', '$location', '$routeParams', AuthRequiredPresenterFactory])
+    .factory('signinService', ['config', 'usecaseAdapterFactory', 'topicMessageDispatcher', 'restServiceHandler', SigninServiceFactory])
     .directive('checkpointPermission', CheckpointHasDirectiveFactory)
     .directive('checkpointPermissionFor', ['activeUserHasPermission', CheckpointPermissionForDirectiveFactory])
     .directive('checkpointIsAuthenticated', ['fetchAccountMetadata', CheckpointIsAuthenticatedDirectiveFactory])
@@ -12,7 +13,7 @@ angular.module('checkpoint', ['ngRoute', 'config', 'ui.bootstrap.modal'])
     .directive('isUnauthenticated', IsUnauthenticatedDirectiveFactory)
     .directive('authenticatedWithRealm', AuthenticatedWithRealmDirectiveFactory)
     .directive('loginModal', ['config', '$modal', LoginModalDirectiveFactory])
-    .controller('SigninController', ['$scope', 'usecaseAdapterFactory', 'restServiceHandler', '$http', '$location', 'config', 'topicMessageDispatcher', SigninController])
+    .controller('SigninController', ['$scope', '$location', 'config', 'signinService', SigninController])
     .controller('AccountMetadataController', ['$scope', 'ngRegisterTopicHandler', 'fetchAccountMetadata', 'authRequiredPresenter', AccountMetadataController])
     .controller('RegistrationController', ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', '$location', RegistrationController])
     .config(['$routeProvider', function ($routeProvider) {
@@ -32,7 +33,38 @@ function SignoutController($scope, $http, topicMessageDispatcher, config) {
 }
 SignoutController.$inject = ['$scope', '$http', 'topicMessageDispatcher', 'config'];
 
-function SigninController($scope, usecaseAdapterFactory, restServiceHandler, $http, $location, config, topicMessageDispatcher) {
+function SigninServiceFactory(config, usecaseAdapterFactory, topicMessageDispatcher, restServiceHandler) {
+    return function(args) {
+        var onSuccessCallback = function () {
+            topicMessageDispatcher.fire('checkpoint.signin', 'ok');
+            args.success();
+        };
+
+        var ctx = usecaseAdapterFactory(args.$scope, onSuccessCallback, {
+            rejected:function() {
+                self.rejected = true
+            }
+        });
+
+        var data = {};
+        Object.keys(args.request).forEach(function(k) {
+            data[k] = args.request[k];
+        });
+        data.namespace = config.namespace;
+
+        var baseUri = config.baseUri || '';
+        ctx.params = {
+            url: baseUri + 'api/checkpoint',
+            method: 'POST',
+            data: data,
+            withCredentials:true
+        };
+
+        restServiceHandler(ctx);
+    }
+}
+
+function SigninController($scope, $location, config, signinService) {
     var self = this;
     self.config = {};
 
@@ -47,33 +79,20 @@ function SigninController($scope, usecaseAdapterFactory, restServiceHandler, $ht
     }
 
     $scope.submit = function (args) {
-        var onSuccessCallback = function () {
-            topicMessageDispatcher.fire('checkpoint.signin', 'ok');
-            if(isRedirectEnabled()) $location.path(config.onSigninSuccessTarget || config.redirectUri || '/');
-            config.onSigninSuccessTarget = undefined;
-            if(args && args.success) args.success();
-        };
-
-        var ctx = usecaseAdapterFactory($scope, onSuccessCallback, {
-            rejected:function() {
-                self.rejected = true
-            }
-        });
-        var baseUri = config.baseUri || '';
-        ctx.params = {
-            url: baseUri + 'api/checkpoint',
-            method: 'POST',
-            data: {
+        self.rejected = false;
+        signinService({
+            $scope:$scope,
+            request:{
                 username: $scope.username,
                 password: $scope.password,
-                rememberMe: $scope.rememberMe,
-                namespace: config.namespace
+                rememberMe: $scope.rememberMe
             },
-            withCredentials:true
-        };
-
-        self.rejected = false;
-        restServiceHandler(ctx);
+            success:function() {
+                if(isRedirectEnabled()) $location.path(config.onSigninSuccessTarget || config.redirectUri || '/');
+                config.onSigninSuccessTarget = undefined;
+                if(args && args.success) args.success();
+            }
+        });
     };
 
     $scope.rejected = function () {

@@ -52,7 +52,11 @@ describe('checkpoint', function () {
 
     describe('SignoutController with baseUri', function () {
         beforeEach(inject(function ($controller) {
-            ctrl = $controller(SignoutController, {$scope: scope, config: {baseUri: 'baseUri/'}, topicMessageDispatcher: dispatcher});
+            ctrl = $controller(SignoutController, {
+                $scope: scope,
+                config: {baseUri: 'baseUri/'},
+                topicMessageDispatcher: dispatcher
+            });
         }));
 
         it('on submit send delete request', function () {
@@ -62,22 +66,69 @@ describe('checkpoint', function () {
         })
     });
 
+    describe('SigninService', function () {
+        var service;
+
+        beforeEach(inject(function (config, signinService) {
+            config.namespace = 'namespace';
+            service = signinService;
+        }));
+
+        describe('on execute', function() {
+            var successCallbackExecuted = false;
+            var success = function() {
+                successCallbackExecuted = true;
+            };
+
+            beforeEach(function() {
+                service({
+                    $scope: scope,
+                    request: {
+                        username: username,
+                        password: password,
+                        rememberMe: rememberMe
+                    },
+                    success:success
+                });
+            });
+
+            it('send post request', function () {
+                expect(rest.calls[0].args[0].params.method).toEqual('POST');
+                expect(rest.calls[0].args[0].params.url).toEqual('api/checkpoint');
+                expect(rest.calls[0].args[0].params.data).toEqual({
+                    username: username,
+                    password: password,
+                    rememberMe: rememberMe,
+                    namespace: 'namespace'
+                });
+                expect(rest.calls[0].args[0].params.withCredentials).toEqual(true);
+            });
+
+            it('success', function () {
+                usecaseAdapter.calls[0].args[1]();
+                expect(dispatcher['checkpoint.signin']).toEqual('ok');
+                expect(successCallbackExecuted).toEqual(true);
+            });
+        });
+    });
+
     describe('SigninController', function () {
+        beforeEach(inject(function ($controller, config) {
+            config.namespace = 'namespace';
+            config.redirectUri = 'redirect';
+            ctrl = $controller(SigninController, {$scope: scope});
+        }));
+
         describe('when username is in search part of url', function () {
             beforeEach(inject(function ($location, $controller) {
                 $location.search('username', username);
-                ctrl = $controller(SigninController, {$scope: scope, config: config});
+                ctrl = $controller(SigninController, {$scope: scope});
             }));
 
             it('username is on scope', function () {
                 expect(scope.username).toEqual(username);
             });
         });
-
-        beforeEach(inject(function ($controller) {
-            config = {namespace: 'namespace', redirectUri: 'redirect'};
-            ctrl = $controller(SigninController, {$scope: scope, config: config});
-        }));
 
         it('username is not on scope', function () {
             expect(scope.username).toBeUndefined();
@@ -91,13 +142,18 @@ describe('checkpoint', function () {
 
             expect(rest.calls[0].args[0].params.method).toEqual('POST');
             expect(rest.calls[0].args[0].params.url).toEqual('api/checkpoint');
-            expect(rest.calls[0].args[0].params.data).toEqual({username: username, password: password, rememberMe: rememberMe, namespace: 'namespace'});
+            expect(rest.calls[0].args[0].params.data).toEqual({
+                username: username,
+                password: password,
+                rememberMe: rememberMe,
+                namespace: 'namespace'
+            });
             expect(rest.calls[0].args[0].params.withCredentials).toEqual(true);
         });
 
         function triggerSuccess(status, data, onSuccess) {
             scope.submit({success: onSuccess});
-            if(status != 412)
+            if (status != 412)
                 usecaseAdapter.calls[0].args[1]();
             else
                 usecaseAdapter.calls[0].args[2].rejected(data);
@@ -119,12 +175,12 @@ describe('checkpoint', function () {
             expect(onSuccessExecuted).toEqual(true);
         });
 
-        describe('with on signin success target', function() {
-            beforeEach(function() {
+        describe('with on signin success target', function () {
+            beforeEach(function () {
                 config.onSigninSuccessTarget = '/success/target';
             });
 
-            it('on submit success', function() {
+            it('on submit success', function () {
                 triggerSuccess(200);
 
                 expect(location.path()).toEqual('/success/target');
@@ -151,8 +207,9 @@ describe('checkpoint', function () {
     describe('SigninController with baseUri', function () {
         var baseUri = 'baseUri';
 
-        beforeEach(inject(function ($controller) {
-            ctrl = $controller(SigninController, {$scope: scope, config: {baseUri: baseUri}});
+        beforeEach(inject(function ($controller, config) {
+            config.baseUri = baseUri;
+            ctrl = $controller(SigninController, {$scope: scope});
         }));
 
         it('on submit send post request', function () {
@@ -305,7 +362,7 @@ describe('checkpoint', function () {
         it('on execute perform rest call', function () {
             config.baseUri = baseUri;
             config.namespace = 'namespace';
-            $httpBackend.expect('GET', baseUri + 'api/account/metadata', null, function(headers) {
+            $httpBackend.expect('GET', baseUri + 'api/account/metadata', null, function (headers) {
                 return headers['X-Namespace'] == config.namespace;
             }).respond(0);
             usecase(response);
@@ -405,7 +462,12 @@ describe('checkpoint', function () {
             var usecase = function (it) {
                 response = it
             };
-            ctrl = $controller(AccountMetadataController, {$scope: scope, topicRegistry: registry, fetchAccountMetadata: usecase, authRequiredPresenter: presenter});
+            ctrl = $controller(AccountMetadataController, {
+                $scope: scope,
+                topicRegistry: registry,
+                fetchAccountMetadata: usecase,
+                authRequiredPresenter: presenter
+            });
         }));
 
         it('scope is given to fetchAccountMetadata', function () {
@@ -435,25 +497,25 @@ describe('checkpoint', function () {
         });
     });
 
-    describe('AuthRequiredPresenter', function() {
+    describe('AuthRequiredPresenter', function () {
         var presenter;
 
-        beforeEach(inject(function(authRequiredPresenter) {
+        beforeEach(inject(function (authRequiredPresenter) {
             presenter = authRequiredPresenter;
         }));
 
-        it('when presenting redirect for signin', function() {
+        it('when presenting redirect for signin', function () {
             presenter('/previous/path');
             expect(location.path()).toEqual('/signin');
             expect(config.onSigninSuccessTarget).toEqual('/previous/path');
         });
 
-        describe('with locale embedded in current route', function() {
-            beforeEach(inject(function($routeParams) {
+        describe('with locale embedded in current route', function () {
+            beforeEach(inject(function ($routeParams) {
                 $routeParams.locale = 'lang';
             }));
 
-            it('when presenting redirect for localized signin', function() {
+            it('when presenting redirect for localized signin', function () {
                 presenter('/previous/path');
                 expect(location.path()).toEqual('/lang/signin');
             })
@@ -511,7 +573,6 @@ describe('checkpoint', function () {
         it('and response.no is not given', function () {
             r.no = undefined;
             withPermission('unknown');
-
             expect(response).toBeUndefined();
         });
 
@@ -703,65 +764,67 @@ describe('checkpoint', function () {
         });
     });
 
-    describe('AuthenticatedWithRealmDirective', function() {
+    describe('AuthenticatedWithRealmDirective', function () {
         var directive;
         var usecaseCalled;
         var response;
         var _topicRegistry;
         var _topicRegistryMock;
-        var usecase = function(it) {
+        var usecase = function (it) {
             usecaseCalled = true;
             response = it;
         };
-        var registry = {subscribe: function (topic, listener) {
-            registry[topic] = listener;
-        }};
+        var registry = {
+            subscribe: function (topic, listener) {
+                registry[topic] = listener;
+            }
+        };
 
 
-        beforeEach(inject(function($rootScope, $injector) {
+        beforeEach(inject(function ($rootScope, $injector) {
             scope = $rootScope.$new();
             _topicRegistry = $injector.get('topicRegistry');
             _topicRegistryMock = $injector.get('topicRegistryMock');
             directive = AuthenticatedWithRealmDirectiveFactory(usecase, registry);
         }));
 
-        it('is an element', function() {
+        it('is an element', function () {
             expect(directive.restrict).toEqual('E');
         });
 
-        it('defines own scope', function() {
+        it('defines own scope', function () {
             expect(directive.scope).toEqual({});
         });
 
-        it('transcludes', function() {
+        it('transcludes', function () {
             expect(directive.transclude).toEqual(true);
         });
 
-        it('defines a template', function() {
+        it('defines a template', function () {
             expect(directive.template).toEqual('<div ng-show="realm"><span ng-transclude></span></div>');
         });
 
-        it('calls fetch account metadata', function() {
+        it('calls fetch account metadata', function () {
             directive.link(scope);
             registry['app.start']();
             expect(usecaseCalled).toBeTruthy();
         });
 
-        it('false when unauthorized', function() {
+        it('false when unauthorized', function () {
             directive.link(scope);
             registry['app.start']();
             response.unauthorized();
             expect(scope.realm).toBeFalsy();
         });
 
-        it('true when attr realm is equal to authenticated realm', function() {
+        it('true when attr realm is equal to authenticated realm', function () {
             directive.link(scope, null, {realm: 'realm'});
             registry['app.start']();
             response.ok({realm: 'realm'});
             expect(scope.realm).toBeTruthy();
         });
 
-        it('false when attr realm is not equal to authenticated realm', function() {
+        it('false when attr realm is not equal to authenticated realm', function () {
             directive.link(scope, null, {realm: 'invalid-realm'});
             registry['app.start']();
             response.ok({realm: 'realm'});
@@ -777,8 +840,8 @@ describe('checkpoint', function () {
         });
     });
 
-    describe('RegistrationController', function() {
-        beforeEach(inject(function($controller) {
+    describe('RegistrationController', function () {
+        beforeEach(inject(function ($controller) {
             ctrl = $controller(RegistrationController, {$scope: scope});
             config.namespace = 'namespace';
             scope.username = 'username';
@@ -788,11 +851,11 @@ describe('checkpoint', function () {
             scope.register();
         }));
 
-        it('puts scope on presenter', function() {
+        it('puts scope on presenter', function () {
             expect(usecaseAdapter.calls[0].args[0]).toEqual(scope);
         });
 
-        it('populates params on presenter', function() {
+        it('populates params on presenter', function () {
             expect(presenter.params.method).toEqual('PUT');
             expect(presenter.params.url).toEqual('api/accounts');
             expect(presenter.params.data.namespace).toEqual(config.namespace);
@@ -803,7 +866,7 @@ describe('checkpoint', function () {
             expect(presenter.params.data.vat).toEqual(scope.vat);
         });
 
-        it('populates params on presenter with base uri', function() {
+        it('populates params on presenter with base uri', function () {
             config.baseUri = 'baseUri/';
             scope.register();
             expect(presenter.params.method).toEqual('PUT');
@@ -816,9 +879,9 @@ describe('checkpoint', function () {
             expect(presenter.params.data.vat).toEqual(scope.vat);
         });
 
-        it('populates params on presenter based on registered mappers', inject(function(registrationRequestMessageMapperRegistry) {
-            registrationRequestMessageMapperRegistry.add(function(scope) {
-                return function(it) {
+        it('populates params on presenter based on registered mappers', inject(function (registrationRequestMessageMapperRegistry) {
+            registrationRequestMessageMapperRegistry.add(function (scope) {
+                return function (it) {
                     it.customField = scope.customField;
                     return it;
                 }
@@ -828,49 +891,49 @@ describe('checkpoint', function () {
             expect(presenter.params.data.customField).toEqual('1234');
         }));
 
-        it('calls rest service', function() {
+        it('calls rest service', function () {
             expect(rest.calls[0].args[0]).toEqual(presenter);
         });
 
-        describe('given registration success', function() {
-            describe('and locale is known', function() {
-                beforeEach(function() {
+        describe('given registration success', function () {
+            describe('and locale is known', function () {
+                beforeEach(function () {
                     scope.locale = 'locale';
                     usecaseAdapter.calls[0].args[1]();
                 });
 
                 it('raises system.success notification', function () {
                     expect(dispatcher['system.success']).toEqual({
-                        code:'checkpoint.registration.completed',
-                        default:'Congratulations, your account has been created.'
+                        code: 'checkpoint.registration.completed',
+                        default: 'Congratulations, your account has been created.'
                     });
                 });
 
-                it('redirects to root', function() {
+                it('redirects to root', function () {
                     expect(location.path()).toEqual('/locale/signin');
                 });
             });
 
-            describe('and locale is unknown', function() {
-                beforeEach(function() {
+            describe('and locale is unknown', function () {
+                beforeEach(function () {
                     usecaseAdapter.calls[0].args[1]();
                 });
 
                 it('raises system.success notification', function () {
                     expect(dispatcher['system.success']).toEqual({
-                        code:'checkpoint.registration.completed',
-                        default:'Congratulations, your account has been created.'
+                        code: 'checkpoint.registration.completed',
+                        default: 'Congratulations, your account has been created.'
                     });
                 });
 
-                it('redirects to root', function() {
+                it('redirects to root', function () {
                     expect(location.path()).toEqual('/signin');
                 });
             });
         });
 
-        describe('given registration rejected', function() {
-            beforeEach(function() {
+        describe('given registration rejected', function () {
+            beforeEach(function () {
                 usecaseAdapter.calls[0].args[2].rejected();
             });
 
