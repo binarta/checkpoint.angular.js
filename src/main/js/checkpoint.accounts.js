@@ -6,12 +6,12 @@ angular.module("checkpoint.accounts", ['ngRoute'])
     .config(['$routeProvider', function($routeProvider) {
         $routeProvider
             .when('/changemypassword', {templateUrl:'partials/checkpoint/changemypassword.html', controller: ['$scope', '$http', 'config', ChangeMyPasswordController]})
-            .when('/password/reset', {templateUrl:'partials/checkpoint/reset-password.html', controller: 'ResetPasswordController'})
-            .when('/password/recover', {templateUrl:'partials/checkpoint/recover-password.html', controller: 'RecoverPasswordController'})
+            .when('/password/reset', {templateUrl:'partials/checkpoint/reset-password.html', controller: ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', '$location', 'resetPasswordPresenter', ResetPasswordController]})
+            .when('/password/recover', {templateUrl:'partials/checkpoint/recover-password.html', controller: ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', 'recoverPasswordPresenter', RecoverPasswordController]})
             .when('/password/token/sent', {templateUrl:'partials/checkpoint/password-token-sent.html'})
             .when('/:locale/changemypassword', {templateUrl:'partials/checkpoint/changemypassword.html', controller: ['$scope', '$http', 'config', ChangeMyPasswordController]})
-            .when('/:locale/password/reset', {templateUrl:'partials/checkpoint/reset-password.html', controller: 'ResetPasswordController'})
-            .when('/:locale/password/recover', {templateUrl:'partials/checkpoint/recover-password.html', controller: 'RecoverPasswordController'})
+            .when('/:locale/password/reset', {templateUrl:'partials/checkpoint/reset-password.html', controller: ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', '$location', 'resetPasswordPresenter', ResetPasswordController]})
+            .when('/:locale/password/recover', {templateUrl:'partials/checkpoint/recover-password.html', controller: ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', 'recoverPasswordPresenter', RecoverPasswordController]})
             .when('/:locale/password/token/sent', {templateUrl:'partials/checkpoint/password-token-sent.html'})
     }]);
 

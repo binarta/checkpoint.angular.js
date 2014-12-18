@@ -6,20 +6,20 @@ angular.module('checkpoint', ['ngRoute', 'config', 'ui.bootstrap.modal'])
     .factory('registrationRequestMessageMapperRegistry', [RegistrationRequestMessageMapperRegistry])
     .factory('authRequiredPresenter', ['config', '$location', '$routeParams', AuthRequiredPresenterFactory])
     .factory('signinService', ['config', 'usecaseAdapterFactory', 'topicMessageDispatcher', 'restServiceHandler', SigninServiceFactory])
-    .directive('checkpointPermission', CheckpointHasDirectiveFactory)
+    .directive('checkpointPermission', ['ngRegisterTopicHandler', 'activeUserHasPermission', CheckpointHasDirectiveFactory])
     .directive('checkpointPermissionFor', ['activeUserHasPermission', CheckpointPermissionForDirectiveFactory])
     .directive('checkpointIsAuthenticated', ['fetchAccountMetadata', CheckpointIsAuthenticatedDirectiveFactory])
-    .directive('isAuthenticated', IsAuthenticatedDirectiveFactory)
-    .directive('isUnauthenticated', IsUnauthenticatedDirectiveFactory)
-    .directive('authenticatedWithRealm', AuthenticatedWithRealmDirectiveFactory)
+    .directive('isAuthenticated', ['fetchAccountMetadata', IsAuthenticatedDirectiveFactory])
+    .directive('isUnauthenticated', ['fetchAccountMetadata', IsUnauthenticatedDirectiveFactory])
+    .directive('authenticatedWithRealm', ['fetchAccountMetadata', 'topicRegistry', AuthenticatedWithRealmDirectiveFactory])
     .directive('loginModal', ['config', '$modal', LoginModalDirectiveFactory])
     .controller('SigninController', ['$scope', '$location', 'config', 'signinService', SigninController])
     .controller('AccountMetadataController', ['$scope', 'ngRegisterTopicHandler', 'fetchAccountMetadata', 'authRequiredPresenter', AccountMetadataController])
     .controller('RegistrationController', ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', '$location', RegistrationController])
     .config(['$routeProvider', function ($routeProvider) {
         $routeProvider
-            .when('/signin', {templateUrl: 'partials/checkpoint/signin.html', controller: SigninController})
-            .when('/:locale/signin', {templateUrl: 'partials/checkpoint/signin.html', controller: SigninController})
+            .when('/signin', {templateUrl: 'partials/checkpoint/signin.html', controller: ['$scope', '$location', 'config', 'signinService', SigninController]})
+            .when('/:locale/signin', {templateUrl: 'partials/checkpoint/signin.html', controller: ['$scope', '$location', 'config', 'signinService', SigninController]})
     }]);
 
 function SignoutController($scope, $http, topicMessageDispatcher, config) {
