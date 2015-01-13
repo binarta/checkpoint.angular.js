@@ -42,6 +42,7 @@ function SigninServiceFactory(config, usecaseAdapterFactory, topicMessageDispatc
 
         var ctx = usecaseAdapterFactory(args.$scope, onSuccessCallback, {
             rejected:function() {
+                if (args.rejected) args.rejected();
                 self.rejected = true
             }
         });
@@ -91,6 +92,9 @@ function SigninController($scope, $location, config, signinService) {
                 if(isRedirectEnabled()) $location.path(config.onSigninSuccessTarget || config.redirectUri || '/');
                 config.onSigninSuccessTarget = undefined;
                 if(args && args.success) args.success();
+            },
+            rejected:function() {
+                self.rejected = true;
             }
         });
     };

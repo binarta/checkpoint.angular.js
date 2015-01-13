@@ -199,7 +199,7 @@ describe('checkpoint', function () {
 
         it('expose rejection status', function () {
             expect(scope.rejected()).toBeUndefined();
-            ctrl.rejected = true;
+            triggerSuccess(412, {});
             expect(scope.rejected()).toEqual(true);
         });
     });
