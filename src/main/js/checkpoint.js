@@ -16,6 +16,7 @@ angular.module('checkpoint', ['ngRoute', 'config', 'ui.bootstrap.modal'])
     .controller('SigninController', ['$scope', '$location', 'config', 'signinService', SigninController])
     .controller('AccountMetadataController', ['$scope', 'ngRegisterTopicHandler', 'fetchAccountMetadata', 'authRequiredPresenter', AccountMetadataController])
     .controller('RegistrationController', ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', '$location', RegistrationController])
+    .controller('SignoutController', ['$scope', '$http', 'topicMessageDispatcher', 'config', SignoutController])
     .config(['$routeProvider', function ($routeProvider) {
         $routeProvider
             .when('/signin', {templateUrl: 'partials/checkpoint/signin.html', controller: ['$scope', '$location', 'config', 'signinService', SigninController]})
@@ -31,7 +32,6 @@ function SignoutController($scope, $http, topicMessageDispatcher, config) {
         $http.delete((config.baseUri || '') + 'api/checkpoint', {withCredentials: true}).success(onSuccess);
     }
 }
-SignoutController.$inject = ['$scope', '$http', 'topicMessageDispatcher', 'config'];
 
 function SigninServiceFactory(config, usecaseAdapterFactory, topicMessageDispatcher, restServiceHandler) {
     return function(args) {
