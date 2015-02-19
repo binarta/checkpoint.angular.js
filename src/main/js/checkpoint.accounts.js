@@ -1,6 +1,7 @@
 angular.module("checkpoint.accounts", ['ngRoute'])
     .controller('RecoverPasswordController', ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', 'recoverPasswordPresenter', RecoverPasswordController])
     .controller('ResetPasswordController', ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', '$location', 'resetPasswordPresenter', ResetPasswordController])
+    .controller('ChangeMyPasswordController', ['$scope', '$http', 'config', ChangeMyPasswordController])
     .factory('resetPasswordPresenter', ['$location', 'topicMessageDispatcher', ResetPasswordPresenterFactory])
     .factory('recoverPasswordPresenter', ['$location', RecoverPasswordPresenterFactory])
     .config(['$routeProvider', function($routeProvider) {
