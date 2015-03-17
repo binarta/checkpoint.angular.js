@@ -1,4 +1,4 @@
-angular.module('checkpoint', ['ngRoute', 'config', 'ui.bootstrap.modal'])
+angular.module('checkpoint', ['ngRoute', 'config', 'notifications', 'angular.usecase.adapter', 'rest.client', 'ui.bootstrap.modal'])
     .service('account', ['$http', '$q', 'config', 'topicRegistry', AccountService])
     .factory('fetchAccountMetadata', ['account', 'ngRegisterTopicHandler', FetchAccountMetadata])
     .factory('activeUserHasPermission', ['account', 'ngRegisterTopicHandler', ActiveUserHasPermission])
