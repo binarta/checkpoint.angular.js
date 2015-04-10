@@ -110,6 +110,10 @@ describe('checkpoint accounts', function () {
                         scope.submit();
                     });
 
+                    it('violation is empty', function () {
+                        expect(scope.violation).toEqual('');
+                    });
+
                     it('creates presenter', function() {
                         expect(usecaseAdapter.calls[0].args[0]).toEqual(scope);
                     });
@@ -129,6 +133,30 @@ describe('checkpoint accounts', function () {
 
                     it('sends rest call', function() {
                         expect(rest.calls[0].args[0]).toEqual(presenter);
+                    });
+
+                    it('when rejected because email was empty', function () {
+                        usecaseAdapter.calls[0].args[2].rejected({
+                            email: ['required', 'email', 'mismatch']
+                        });
+
+                        expect(scope.violation).toEqual('email.required');
+                    });
+
+                    it('when rejected because email was invalid', function () {
+                        usecaseAdapter.calls[0].args[2].rejected({
+                            email: ['email', 'mismatch']
+                        });
+
+                        expect(scope.violation).toEqual('email.invalid');
+                    });
+
+                    it('when rejected because email was unknown', function () {
+                        usecaseAdapter.calls[0].args[2].rejected({
+                            email: ['mismatch']
+                        });
+
+                        expect(scope.violation).toEqual('email.mismatch');
                     });
                 });
             });
@@ -173,6 +201,10 @@ describe('checkpoint accounts', function () {
                             scope.submit();
                         });
 
+                        it('violation is empty', function () {
+                            expect(scope.violation).toEqual('');
+                        });
+
                         it('creates presenter', function() {
                             expect(usecaseAdapter.calls[0].args[0]).toEqual(scope);
                         });
@@ -193,6 +225,30 @@ describe('checkpoint accounts', function () {
 
                         it('sends rest call', function() {
                             expect(rest.calls[0].args[0]).toEqual(presenter);
+                        });
+
+                        it('when rejected because password was empy', function () {
+                            usecaseAdapter.calls[0].args[2].rejected({
+                                password: ['required']
+                            });
+
+                            expect(scope.violation).toEqual('password.required');
+                        });
+
+                        it('when rejected because no token is given', function () {
+                            usecaseAdapter.calls[0].args[2].rejected({
+                                token: ['required']
+                            });
+
+                            expect(scope.violation).toEqual('token.required');
+                        });
+
+                        it('when rejected because token is invalid', function () {
+                            usecaseAdapter.calls[0].args[2].rejected({
+                                token: ['mismatch']
+                            });
+
+                            expect(scope.violation).toEqual('token.mismatch');
                         });
                     });
                 });
@@ -222,7 +278,7 @@ describe('checkpoint accounts', function () {
 
         it('fires system success', function() {
             resetPresenter(scope);
-            expect(dispatcher['system.success']).toEqual({code:'account.password.reset.success', default:'Password was successfully updated'});
+            expect(dispatcher['system.success']).toEqual({code:'checkpoint.reset.password.success', default:'Password was successfully updated'});
         })
     });
 

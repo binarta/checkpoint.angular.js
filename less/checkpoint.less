@@ -1,0 +1,32 @@
+.bin-checkpoint-container {
+  @bin-checkpoint-background-color: #f3f3f4;
+
+  max-width: 350px;
+  margin: 40px auto;
+  text-align: center;
+
+  .well {
+    padding: 40px;
+    margin-bottom: 40px;
+    text-align: left;
+    background: @bin-checkpoint-background-color;
+    box-shadow: 0 2px 2px rgba(0, 0, 0, 0.3);
+
+    legend {
+      color: darken(@bin-checkpoint-background-color, 25%);
+      margin-top: -20px;
+      margin-bottom: 30px;
+    }
+
+    .bin-checkpoint-profile-img {
+      width: 100px;
+      margin: 0 auto 40px;
+      display: block;
+    }
+
+    input, button {
+      height: 44px;
+      margin-bottom: 10px;
+    }
+  }
+}

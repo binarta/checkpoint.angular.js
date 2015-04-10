@@ -59,10 +59,19 @@ function RecoverPasswordController($scope, usecaseAdapterFactory, config, restSe
     function toBaseUri() {
         return config.baseUri || '';
     }
-    $scope.submit = function() {
-        var presenter = usecaseAdapterFactory($scope, function() {
-            recoverPasswordPresenter($scope);
-        });
+
+    $scope.submit = function () {
+        $scope.violation = '';
+        var presenter = usecaseAdapterFactory($scope, function () {
+                recoverPasswordPresenter($scope);
+            }, {
+                rejected: function (violations) {
+                    if (violations.email.indexOf('required') != -1) $scope.violation = 'email.required';
+                    else if (violations.email.indexOf('email') != -1) $scope.violation = 'email.invalid';
+                    else if (violations.email.indexOf('mismatch') != -1) $scope.violation = 'email.mismatch';
+                }
+            }
+        );
         presenter.params = {
             method: 'PUT',
             url: toBaseUri() + 'api/entity/password-reset-token',
@@ -82,10 +91,20 @@ function ResetPasswordController($scope, usecaseAdapterFactory, config, restServ
 
     if($location.search().username) $scope.username = $location.search().username;
 
-    $scope.submit = function() {
-        var presenter = usecaseAdapterFactory($scope, function() {
-            resetPasswordPresenter($scope);
-        });
+    $scope.submit = function () {
+        $scope.violation = '';
+        var presenter = usecaseAdapterFactory($scope, function () {
+                resetPasswordPresenter($scope);
+            }, {
+                rejected: function (violations) {
+                    if (violations.password) $scope.violation = 'password.required';
+                    else if (violations.token) {
+                        if (violations.token.indexOf('required') != -1) $scope.violation = 'token.required';
+                        else if (violations.token.indexOf('mismatch') != -1) $scope.violation = 'token.mismatch';
+                    }
+                }
+            }
+        );
         presenter.params = {
             method: 'POST',
             url: toBaseUri() + 'api/account/reset/password',
@@ -102,8 +121,8 @@ function ResetPasswordController($scope, usecaseAdapterFactory, config, restServ
 function ResetPasswordPresenterFactory($location, topicMessageDispatcher) {
     return function(scope) {
         topicMessageDispatcher.fire('system.success', {
-            code:'account.password.reset.success',
-            default:'Password was successfully updated'
+            code: 'checkpoint.reset.password.success',
+            default: 'Password was successfully updated'
         });
         $location.path(toLocale(scope) + '/signin');
         $location.search('token', null);

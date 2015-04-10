@@ -185,6 +185,7 @@ describe('checkpoint', function () {
 
                 expect(location.path()).toEqual('/success/target');
                 expect(config.onSigninSuccessTarget).toBeUndefined();
+                expect(scope.violation).toEqual('');
             });
         });
 
@@ -201,6 +202,7 @@ describe('checkpoint', function () {
             expect(scope.rejected()).toBeUndefined();
             triggerSuccess(412, {});
             expect(scope.rejected()).toEqual(true);
+            expect(scope.violation).toEqual('credentials.mismatch');
         });
     });
 

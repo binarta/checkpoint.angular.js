@@ -81,6 +81,7 @@ function SigninController($scope, $location, config, signinService) {
 
     $scope.submit = function (args) {
         self.rejected = false;
+        $scope.violation = '';
         signinService({
             $scope:$scope,
             request:{
@@ -95,6 +96,7 @@ function SigninController($scope, $location, config, signinService) {
             },
             rejected:function() {
                 self.rejected = true;
+                $scope.violation = 'credentials.mismatch';
             }
         });
     };
