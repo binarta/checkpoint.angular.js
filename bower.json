@@ -2,7 +2,8 @@
   "name": "binarta.checkpoint.angular",
   "main": [
     "./src/main/js/checkpoint.js",
-    "./src/main/js/checkpoint.accounts.js"
+    "./src/main/js/checkpoint.accounts.js",
+    "./src/main/js/checkpoint-tpls-bootstrap3.js"
   ],
   "dependencies": {
     "angular": "1.3.*",
