@@ -3,7 +3,8 @@
   "main": [
     "./src/main/js/checkpoint.js",
     "./src/main/js/checkpoint.accounts.js",
-    "./src/main/js/checkpoint-tpls-bootstrap3.js"
+    "./src/main/js/checkpoint-tpls-bootstrap3.js",
+    "./less/checkpoint.less"
   ],
   "dependencies": {
     "angular": "1.3.*",
