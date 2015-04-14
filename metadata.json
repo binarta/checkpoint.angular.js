@@ -1,0 +1,34 @@
+{
+  "msgs":{
+    "default":{
+      "checkpoint.username.email.label": "Gebruikersnaam / E-mail",
+      "checkpoint.email.label": "E-mail",
+      "checkpoint.password.label": "Wachtwoord",
+      "checkpoint.current.password.label": "Huidig wachtwoord",
+      "checkpoint.new.password.label": "Nieuw wachtwoord",
+      "checkpoint.login.submit": "Login",
+      "checkpoint.recover.password.submit": "Verstuur",
+      "checkpoint.change.password.submit": "Opslaan",
+      "checkpoint.reset.password.submit": "Reset",
+      "checkpoint.recover.password.link": "Wachtwoord vergeten?",
+      "checkpoint.login.title": "Login",
+      "checkpoint.login.link": "Login",
+      "checkpoint.create.account": "Maak een account aan",
+      "checkpoint.recover.password.title": "Wachtwoord vergeten?",
+      "checkpoint.change.password.title": "Verander mijn wachtwoord",
+      "checkpoint.reset.password.title": "Wachtwoord resetten",
+      "checkpoint.reset.password.token.sent": "Een mail met verdere instructies werd verstuurd naar uw e-mailadres. Gelieve uw inbox te raadplegen.",
+      "checkpoint.change.password.success": "Uw wachtwoord werd veranderd.",
+      "checkpoint.reset.password.success": "Uw wachtwoord werd geüpdatet.",
+      "checkpoint.registration.completed": "Gefeliciteerd, je account is aangemaakt.",
+      "checkpoint.credentials.mismatch": "Jouw gebruikersnaam en/of wachtwoord is niet correct",
+      "checkpoint.email.required": "E-mail is verplicht",
+      "checkpoint.email.invalid": "E-mail is ongeldig",
+      "checkpoint.email.mismatch": "Geen account gekoppeld aan dit e-mailadres",
+      "checkpoint.current.password.mismatch": "Uw huidig wachtwoord komt niet overeen met het ingevoerde wachtwoord",
+      "checkpoint.password.required": "Gelieve een nieuw wachtwoord op te geven",
+      "checkpoint.token.required": "Geen token gevonden",
+      "checkpoint.token.mismatch": "Ongeldig token"
+    }
+  }
+}
