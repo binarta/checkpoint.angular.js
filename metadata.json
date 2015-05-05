@@ -28,7 +28,11 @@
       "checkpoint.current.password.mismatch": "Uw huidig wachtwoord komt niet overeen",
       "checkpoint.password.required": "Gelieve een nieuw wachtwoord op te geven",
       "checkpoint.token.required": "Geen token gevonden",
-      "checkpoint.token.mismatch": "Ongeldig token"
+      "checkpoint.token.mismatch": "Ongeldig token",
+      "checkpoint.recover.password.mail.title": "Herstel Wachtwoord",
+      "checkpoint.recover.password.mail.salutation": "Beste",
+      "checkpoint.recover.password.mail.message": "Wij hebben een verzoek gekregen om jouw wachtwoord te herstellen. Indien je deze actie niet zelf gestart hebt dan mag je deze e-mail gewoon negeren. Heb je een vermoeden van misbruik dan kan je deze e-mail forwarden naar <a href=\"mailto:support@binarta.com\">support@binarta.com</a>.",
+      "checkpoint.recover.password.mail.recover.link": "Klik hier om je wachtwoord te herstellen."
     },
     "nl":{
       "checkpoint.username.email.label": "Gebruikersnaam / E-mail",
@@ -58,7 +62,11 @@
       "checkpoint.current.password.mismatch": "Uw huidig wachtwoord komt niet overeen",
       "checkpoint.password.required": "Gelieve een nieuw wachtwoord op te geven",
       "checkpoint.token.required": "Geen token gevonden",
-      "checkpoint.token.mismatch": "Ongeldig token"
+      "checkpoint.token.mismatch": "Ongeldig token",
+      "checkpoint.recover.password.mail.title": "Herstel Wachtwoord",
+      "checkpoint.recover.password.mail.salutation": "Beste",
+      "checkpoint.recover.password.mail.message": "Wij hebben een verzoek gekregen om jouw wachtwoord te herstellen. Indien je deze actie niet zelf gestart hebt dan mag je deze e-mail gewoon negeren. Heb je een vermoeden van misbruik dan kan je deze e-mail forwarden naar <a href=\"mailto:support@binarta.com\">support@binarta.com</a>.",
+      "checkpoint.recover.password.mail.recover.link": "Klik hier om je wachtwoord te herstellen."
     },
     "en":{
       "checkpoint.username.email.label": "Username / Email",
@@ -88,7 +96,11 @@
       "checkpoint.current.password.mismatch": "Your current password doesn't match",
       "checkpoint.password.required": "Please enter a new password",
       "checkpoint.token.required": "No token found",
-      "checkpoint.token.mismatch": "Invalid token"
+      "checkpoint.token.mismatch": "Invalid token",
+      "checkpoint.recover.password.mail.title": "Password Recovery Requested",
+      "checkpoint.recover.password.mail.salutation": "Hello",
+      "checkpoint.recover.password.mail.message": "An attempt to recover your password has been received. If you do not remember making such a request please ignore all further contents of this email. In order to reset your password please click on the following link and enter a new password.",
+      "checkpoint.recover.password.mail.recover.link": "Reset your password"
     }
   }
 }
