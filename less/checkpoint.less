@@ -1,6 +1,6 @@
-.bin-checkpoint-container {
-  @bin-checkpoint-background-color: #f3f3f4;
+@bin-checkpoint-background-color: #f3f3f4;
 
+.bin-checkpoint-container {
   max-width: 350px;
   margin: 40px auto;
   text-align: center;
@@ -23,10 +23,45 @@
       margin: 0 auto 40px;
       display: block;
     }
+  }
+}
 
-    input, button {
+.bin-checkpoint-form {
+  .form-group {
+    position: relative;
+    input {
       height: 44px;
-      margin-bottom: 10px;
+      transition: margin 150ms ease-in-out;
     }
+
+    label {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      cursor: text;
+      color: darken(@bin-checkpoint-background-color, 35%);
+      font-weight: normal;
+      transition-property: top, left, color;
+      transition-duration: 150ms;
+      transition-timing-function: ease-in-out;
+    }
+    input:focus, input:valid, input.ng-dirty {
+      margin-top: 40px;
+      transition: margin 150ms ease-in-out;
+
+      & + label {
+        top: -25px;
+        left: 0;
+        cursor: default;
+        color: darken(@bin-checkpoint-background-color, 50%);
+        transition-property: top, left, color;
+        transition-duration: 150ms;
+        transition-timing-function: ease-in-out;
+      }
+    }
+  }
+
+  button {
+    margin-bottom: 10px;
   }
 }
