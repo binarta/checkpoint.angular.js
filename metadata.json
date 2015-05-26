@@ -171,7 +171,7 @@
       "checkpoint.token.mismatch": "Ungültiges Token",
       "checkpoint.recover.password.mail.subject":"Passwort wiederherstellen",
       "checkpoint.recover.password.mail.title": "Passwort wiederherstellen",
-      "checkpoint.recover.password.mail.salutation": "Sehr geehrter",
+      "checkpoint.recover.password.mail.salutation": "Lieber",
       "checkpoint.recover.password.mail.message": "Wir haben eine Anfrage zur Wiederherstellung Ihres Passworts erhalten. Falls Sie diese Anfrage nicht selbst getätigt haben, ignorieren Sie diese E-Mail-Nachricht. Falls Sie einen Missbrauch vermuten, können Sie diese E-Mail-Nachricht weiterleiten an <a href=\"mailto:support@binarta.com\">support@binarta.com</a>.",
       "checkpoint.recover.password.mail.recover.link": "Klicken Sie hier zur Wiederherstellung Ihres Passworts"
     }
