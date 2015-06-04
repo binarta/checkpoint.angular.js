@@ -1058,12 +1058,25 @@ describe('checkpoint', function () {
             $controller = _$controller_;
         }));
 
-        it('when welcome is in search part of url', function () {
-            $location.search('welcome', true);
+        describe('when welcome is in search part of url', function () {
+            beforeEach(function () {
+                $location.search('welcome', true);
+                ctrl = $controller('welcomeMessageController');
+            });
 
-            ctrl = $controller('welcomeMessageController');
+            it('welcome is available', function () {
+                expect(ctrl.welcome).toBeTruthy();
+            });
 
-            expect(ctrl.welcome).toBeTruthy();
+            describe('after route change', function () {
+                beforeEach(function () {
+                    $rootScope.$broadcast('$routeChangeStart');
+                });
+
+                it('remove welcome from search part', function () {
+                    expect($location.search().welcome).toBeUndefined();
+                });
+            });
         });
 
         it('when welcome is not in search part of url', function () {

@@ -17,7 +17,7 @@ angular.module('checkpoint', ['ngRoute', 'config', 'notifications', 'angular.use
     .controller('AccountMetadataController', ['$scope', 'fetchAccountMetadata', AccountMetadataController])
     .controller('RegistrationController', ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', '$location', RegistrationController])
     .controller('SignoutController', ['$scope', '$http', 'topicMessageDispatcher', 'config', SignoutController])
-    .controller('welcomeMessageController', ['$location', WelcomeMessageController])
+    .controller('welcomeMessageController', ['$location','$rootScope', WelcomeMessageController])
     .config(['$routeProvider', function ($routeProvider) {
         $routeProvider
             .when('/signin', {templateUrl: 'partials/checkpoint/signin.html', controller: 'SigninController'})
@@ -451,6 +451,14 @@ function LoginModalDirectiveFactory(config, $modal) {
     };
 }
 
-function WelcomeMessageController($location) {
+function WelcomeMessageController($location, $rootScope) {
     this.welcome = $location.search().welcome;
+    if (this.welcome) removeParamOnRouteChange();
+
+    function removeParamOnRouteChange() {
+        var removeListener = $rootScope.$on('$routeChangeStart', function () {
+            removeListener();
+            $location.search('welcome', null);
+        });
+    }
 }
