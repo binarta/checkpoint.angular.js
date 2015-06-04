@@ -1,6 +1,6 @@
 describe('checkpoint', function () {
     var self = this;
-    var ctrl, scope, $httpBackend, location, dispatcher, registry, config;
+    var ctrl, $rootScope, scope, $httpBackend, location, dispatcher, registry, config;
     var payload = {};
     var usecaseAdapter;
     var rest;
@@ -14,7 +14,8 @@ describe('checkpoint', function () {
     beforeEach(module('rest.client'));
     beforeEach(module('notifications'));
     beforeEach(module('angular.usecase.adapter'));
-    beforeEach(inject(function ($rootScope, $injector, $location, topicMessageDispatcherMock, topicRegistryMock, usecaseAdapterFactory, restServiceHandler) {
+    beforeEach(inject(function (_$rootScope_, $injector, $location, topicMessageDispatcherMock, topicRegistryMock, usecaseAdapterFactory, restServiceHandler) {
+        $rootScope = _$rootScope_;
         scope = $rootScope.$new();
         config = $injector.get('config');
         location = $location;
@@ -113,96 +114,123 @@ describe('checkpoint', function () {
     });
 
     describe('SigninController', function () {
-        beforeEach(inject(function ($controller, config) {
+        var $controller;
+
+        beforeEach(inject(function (_$controller_, config) {
+            $controller = _$controller_;
             config.namespace = 'namespace';
             config.redirectUri = 'redirect';
-            ctrl = $controller(SigninController, {$scope: scope});
         }));
 
-        describe('when username is in search part of url', function () {
-            beforeEach(inject(function ($location, $controller) {
-                $location.search('username', username);
+        describe('when unauthenticated', function () {
+            describe('when username is in search part of url', function () {
+                beforeEach(inject(function ($location, $controller) {
+                    $location.search('username', username);
+                    $httpBackend.expect('GET', /.*/).respond(401);
+                    ctrl = $controller(SigninController, {$scope: scope});
+                    $httpBackend.flush();
+                }));
+
+                it('username is on scope', function () {
+                    expect(scope.username).toEqual(username);
+                });
+            });
+
+            describe('no params in search part of url', function () {
+                beforeEach(function () {
+                    $httpBackend.expect('GET', /.*/).respond(401);
+                    ctrl = $controller(SigninController, {$scope: scope});
+                    $httpBackend.flush();
+                });
+
+                it('username is not on scope', function () {
+                    expect(scope.username).toBeUndefined();
+                });
+
+                it('on submit send post request', function () {
+                    scope.username = username;
+                    scope.password = password;
+                    scope.rememberMe = rememberMe;
+                    scope.submit();
+
+                    expect(rest.calls[0].args[0].params.method).toEqual('POST');
+                    expect(rest.calls[0].args[0].params.url).toEqual('api/checkpoint');
+                    expect(rest.calls[0].args[0].params.data).toEqual({
+                        username: username,
+                        password: password,
+                        rememberMe: rememberMe,
+                        namespace: 'namespace'
+                    });
+                    expect(rest.calls[0].args[0].params.withCredentials).toEqual(true);
+                });
+
+                function triggerSuccess(status, data, onSuccess) {
+                    scope.submit({success: onSuccess});
+                    if (status != 412)
+                        usecaseAdapter.calls[0].args[1]();
+                    else
+                        usecaseAdapter.calls[0].args[2].rejected(data);
+                }
+
+                it('on submit success', function () {
+                    triggerSuccess(200);
+
+                    expect(location.path()).toEqual('/redirect');
+                    expect(dispatcher['checkpoint.signin']).toEqual('ok');
+                });
+
+                it('on submit success with extra success callback', function () {
+                    var onSuccessExecuted;
+                    triggerSuccess(200, null, function () {
+                        onSuccessExecuted = true;
+                    });
+
+                    expect(onSuccessExecuted).toEqual(true);
+                });
+
+                describe('with on signin success target', function () {
+                    beforeEach(function () {
+                        config.onSigninSuccessTarget = '/success/target';
+                    });
+
+                    it('on submit success', function () {
+                        triggerSuccess(200);
+
+                        expect(location.path()).toEqual('/success/target');
+                        expect(config.onSigninSuccessTarget).toBeUndefined();
+                        expect(scope.violation).toEqual('');
+                    });
+                });
+
+                it('on submit success with no redirect', function () {
+                    location.path('/noredirect');
+                    scope.init({noredirect: true});
+
+                    triggerSuccess(200);
+
+                    expect(location.path()).toEqual('/noredirect');
+                });
+
+                it('expose rejection status', function () {
+                    expect(scope.rejected()).toBeUndefined();
+                    triggerSuccess(412, {});
+                    expect(scope.rejected()).toEqual(true);
+                    expect(scope.violation).toEqual('credentials.mismatch');
+                });
+            });
+        });
+
+        ddescribe('when already signed in', function () {
+            beforeEach(function() {
+                location.path('/path');
+                $httpBackend.expect('GET', /.*/).respond({principal: 'principal'});
                 ctrl = $controller(SigninController, {$scope: scope});
-            }));
-
-            it('username is on scope', function () {
-                expect(scope.username).toEqual(username);
-            });
-        });
-
-        it('username is not on scope', function () {
-            expect(scope.username).toBeUndefined();
-        });
-
-        it('on submit send post request', function () {
-            scope.username = username;
-            scope.password = password;
-            scope.rememberMe = rememberMe;
-            scope.submit();
-
-            expect(rest.calls[0].args[0].params.method).toEqual('POST');
-            expect(rest.calls[0].args[0].params.url).toEqual('api/checkpoint');
-            expect(rest.calls[0].args[0].params.data).toEqual({
-                username: username,
-                password: password,
-                rememberMe: rememberMe,
-                namespace: 'namespace'
-            });
-            expect(rest.calls[0].args[0].params.withCredentials).toEqual(true);
-        });
-
-        function triggerSuccess(status, data, onSuccess) {
-            scope.submit({success: onSuccess});
-            if (status != 412)
-                usecaseAdapter.calls[0].args[1]();
-            else
-                usecaseAdapter.calls[0].args[2].rejected(data);
-        }
-
-        it('on submit success', function () {
-            triggerSuccess(200);
-
-            expect(location.path()).toEqual('/redirect');
-            expect(dispatcher['checkpoint.signin']).toEqual('ok');
-        });
-
-        it('on submit success with extra success callback', function () {
-            var onSuccessExecuted;
-            triggerSuccess(200, null, function () {
-                onSuccessExecuted = true;
+                $httpBackend.flush();
             });
 
-            expect(onSuccessExecuted).toEqual(true);
-        });
-
-        describe('with on signin success target', function () {
-            beforeEach(function () {
-                config.onSigninSuccessTarget = '/success/target';
+            it('should redirect to homepage', function () {
+                expect(location.path()).toEqual('/');
             });
-
-            it('on submit success', function () {
-                triggerSuccess(200);
-
-                expect(location.path()).toEqual('/success/target');
-                expect(config.onSigninSuccessTarget).toBeUndefined();
-                expect(scope.violation).toEqual('');
-            });
-        });
-
-        it('on submit success with no redirect', function () {
-            location.path('/noredirect');
-            scope.init({noredirect: true});
-
-            triggerSuccess(200);
-
-            expect(location.path()).toEqual('/noredirect');
-        });
-
-        it('expose rejection status', function () {
-            expect(scope.rejected()).toBeUndefined();
-            triggerSuccess(412, {});
-            expect(scope.rejected()).toEqual(true);
-            expect(scope.violation).toEqual('credentials.mismatch');
         });
     });
 
@@ -211,7 +239,9 @@ describe('checkpoint', function () {
 
         beforeEach(inject(function ($controller, config) {
             config.baseUri = baseUri;
+            $httpBackend.expect('GET', /.*/).respond(401);
             ctrl = $controller(SigninController, {$scope: scope});
+            $httpBackend.flush();
         }));
 
         it('on submit send post request', function () {

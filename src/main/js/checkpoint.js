@@ -13,15 +13,15 @@ angular.module('checkpoint', ['ngRoute', 'config', 'notifications', 'angular.use
     .directive('isUnauthenticated', ['fetchAccountMetadata', IsUnauthenticatedDirectiveFactory])
     .directive('authenticatedWithRealm', ['fetchAccountMetadata', 'topicRegistry', AuthenticatedWithRealmDirectiveFactory])
     .directive('loginModal', ['config', '$modal', LoginModalDirectiveFactory])
-    .controller('SigninController', ['$scope', '$location', 'config', 'signinService', SigninController])
+    .controller('SigninController', ['$scope', '$location', 'config', 'signinService', 'account', SigninController])
     .controller('AccountMetadataController', ['$scope', 'ngRegisterTopicHandler', 'fetchAccountMetadata', 'authRequiredPresenter', AccountMetadataController])
     .controller('RegistrationController', ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', '$location', RegistrationController])
     .controller('SignoutController', ['$scope', '$http', 'topicMessageDispatcher', 'config', SignoutController])
     .controller('welcomeMessageController', ['$location', WelcomeMessageController])
     .config(['$routeProvider', function ($routeProvider) {
         $routeProvider
-            .when('/signin', {templateUrl: 'partials/checkpoint/signin.html', controller: ['$scope', '$location', 'config', 'signinService', SigninController]})
-            .when('/:locale/signin', {templateUrl: 'partials/checkpoint/signin.html', controller: ['$scope', '$location', 'config', 'signinService', SigninController]})
+            .when('/signin', {templateUrl: 'partials/checkpoint/signin.html', controller: 'SigninController'})
+            .when('/:locale/signin', {templateUrl: 'partials/checkpoint/signin.html', controller: 'SigninController'})
     }]);
 
 function SignoutController($scope, $http, topicMessageDispatcher, config) {
@@ -66,45 +66,50 @@ function SigninServiceFactory(config, usecaseAdapterFactory, topicMessageDispatc
     }
 }
 
-function SigninController($scope, $location, config, signinService) {
+function SigninController($scope, $location, config, signinService, account) {
     var self = this;
-    self.config = {};
 
-    $scope.username = $location.search().username;
+    account.getMetadata().then(function() {
+        $location.path('/');
+    }, function () {
+        self.config = {};
 
-    $scope.init = function (config) {
-        self.config = config;
-    };
+        $scope.username = $location.search().username;
 
-    function isRedirectEnabled() {
-        return !self.config.noredirect;
-    }
+        $scope.init = function (config) {
+            self.config = config;
+        };
 
-    $scope.submit = function (args) {
-        self.rejected = false;
-        $scope.violation = '';
-        signinService({
-            $scope:$scope,
-            request:{
-                username: $scope.username,
-                password: $scope.password,
-                rememberMe: $scope.rememberMe
-            },
-            success:function() {
-                if(isRedirectEnabled()) $location.path(config.onSigninSuccessTarget || config.redirectUri || '/');
-                config.onSigninSuccessTarget = undefined;
-                if(args && args.success) args.success();
-            },
-            rejected:function() {
-                self.rejected = true;
-                $scope.violation = 'credentials.mismatch';
-            }
-        });
-    };
+        function isRedirectEnabled() {
+            return !self.config.noredirect;
+        }
 
-    $scope.rejected = function () {
-        return self.rejected;
-    };
+        $scope.submit = function (args) {
+            self.rejected = false;
+            $scope.violation = '';
+            signinService({
+                $scope:$scope,
+                request:{
+                    username: $scope.username,
+                    password: $scope.password,
+                    rememberMe: $scope.rememberMe
+                },
+                success:function() {
+                    if(isRedirectEnabled()) $location.path(config.onSigninSuccessTarget || config.redirectUri || '/');
+                    config.onSigninSuccessTarget = undefined;
+                    if(args && args.success) args.success();
+                },
+                rejected:function() {
+                    self.rejected = true;
+                    $scope.violation = 'credentials.mismatch';
+                }
+            });
+        };
+
+        $scope.rejected = function () {
+            return self.rejected;
+        };
+    });
 }
 
 function AccountService($http, $q, config, topicRegistry) {
