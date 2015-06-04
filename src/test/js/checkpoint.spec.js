@@ -220,7 +220,7 @@ describe('checkpoint', function () {
             });
         });
 
-        ddescribe('when already signed in', function () {
+        describe('when already signed in', function () {
             beforeEach(function() {
                 location.path('/path');
                 $httpBackend.expect('GET', /.*/).respond({principal: 'principal'});
@@ -251,15 +251,31 @@ describe('checkpoint', function () {
     });
 
     describe('AccountService', function () {
-        var account, rootScope, topics;
+        var account, rootScope, topics, $location;
 
-        beforeEach(inject(function (_account_, $rootScope, topicRegistryMock) {
+        beforeEach(inject(function (_account_, $rootScope, topicRegistryMock, _$location_) {
+            $location = _$location_;
             account = _account_;
             rootScope = $rootScope;
             config.namespace = 'namespace';
             config.baseUri = 'base/';
             topics = topicRegistryMock;
         }));
+
+        describe('on auth.required should call presenter', function () {
+            beforeEach(function () {
+                topics['checkpoint.auth.required']('/target/path');
+            });
+
+            it('set target path on config', function () {
+                expect(config.onSigninSuccessTarget).toEqual('/target/path');
+            });
+
+            it('redirect to signin page', function () {
+                expect($location.path()).toEqual('/signin');
+            });
+        });
+
 
         describe('get metadata', function () {
             var validData = {principal: 'foo'},
@@ -306,9 +322,17 @@ describe('checkpoint', function () {
                 callGetMetadata(validData);
             });
 
+
             it('on signout should remove cached promise', function () {
                 callGetMetadata(validData);
                 topics['checkpoint.signout']('ok');
+
+                callGetMetadata(validData);
+            });
+
+            it('on auth.required should remove cached promise', function () {
+                callGetMetadata(validData);
+                topics['checkpoint.auth.required']();
 
                 callGetMetadata(validData);
             });
@@ -354,6 +378,12 @@ describe('checkpoint', function () {
 
             it('on signout should remove cached promise', function () {
                 topics['checkpoint.signout']('ok');
+
+                callGetPermissions();
+            });
+
+            it('on auth.required should remove cached promise', function () {
+                topics['checkpoint.auth.required']();
 
                 callGetPermissions();
             });
@@ -520,12 +550,6 @@ describe('checkpoint', function () {
             expect(scope.unauthorized()).toEqual(false);
             expect(scope.authorized()).toEqual(true);
             expect(scope.metadata).toEqual(payload);
-        });
-
-        it('on auth required notification delegate to presenter by passing target and scope', function () {
-            registry['checkpoint.auth.required']('/previous/path');
-            expect(presenter.calls[0].args[0]).toEqual('/previous/path');
-            expect(presenter.calls[0].args[1]).toEqual(scope);
         });
     });
 

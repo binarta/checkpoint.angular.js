@@ -1,5 +1,5 @@
 angular.module('checkpoint', ['ngRoute', 'config', 'notifications', 'angular.usecase.adapter', 'rest.client', 'ui.bootstrap.modal'])
-    .service('account', ['$http', '$q', 'config', 'topicRegistry', AccountService])
+    .service('account', ['$http', '$q', 'config', 'topicRegistry', 'authRequiredPresenter', AccountService])
     .factory('fetchAccountMetadata', ['account', 'ngRegisterTopicHandler', FetchAccountMetadata])
     .factory('activeUserHasPermission', ['account', 'ngRegisterTopicHandler', ActiveUserHasPermission])
     .factory('registrationRequestMessageMapper', ['config', 'registrationRequestMessageMapperRegistry', RegistrationRequestMessageMapperFactory])
@@ -14,7 +14,7 @@ angular.module('checkpoint', ['ngRoute', 'config', 'notifications', 'angular.use
     .directive('authenticatedWithRealm', ['fetchAccountMetadata', 'topicRegistry', AuthenticatedWithRealmDirectiveFactory])
     .directive('loginModal', ['config', '$modal', LoginModalDirectiveFactory])
     .controller('SigninController', ['$scope', '$location', 'config', 'signinService', 'account', SigninController])
-    .controller('AccountMetadataController', ['$scope', 'ngRegisterTopicHandler', 'fetchAccountMetadata', 'authRequiredPresenter', AccountMetadataController])
+    .controller('AccountMetadataController', ['$scope', 'fetchAccountMetadata', AccountMetadataController])
     .controller('RegistrationController', ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', '$location', RegistrationController])
     .controller('SignoutController', ['$scope', '$http', 'topicMessageDispatcher', 'config', SignoutController])
     .controller('welcomeMessageController', ['$location', WelcomeMessageController])
@@ -112,14 +112,21 @@ function SigninController($scope, $location, config, signinService, account) {
     });
 }
 
-function AccountService($http, $q, config, topicRegistry) {
+function AccountService($http, $q, config, topicRegistry, authRequiredPresenter) {
     var metadataPromise, permissionPromise;
 
+    function resetPromises() {
+        metadataPromise = undefined;
+        permissionPromise = undefined;
+    }
+
     ['checkpoint.signin', 'checkpoint.signout'].forEach(function (topic) {
-        topicRegistry.subscribe(topic, function () {
-            metadataPromise = undefined;
-            permissionPromise = undefined;
-        });
+        topicRegistry.subscribe(topic, resetPromises);
+    });
+
+    topicRegistry.subscribe('checkpoint.auth.required', function(target) {
+        resetPromises();
+        authRequiredPresenter(target);
     });
 
     function getMetadata() {
@@ -183,7 +190,7 @@ function FetchAccountMetadata(account, ngRegisterTopicHandler) {
     };
 }
 
-function AccountMetadataController($scope, ngRegisterTopicHandler, fetchAccountMetadata, authRequiredPresenter) {
+function AccountMetadataController($scope, fetchAccountMetadata) {
     var self = this;
 
     fetchAccountMetadata({
@@ -204,10 +211,6 @@ function AccountMetadataController($scope, ngRegisterTopicHandler, fetchAccountM
     $scope.authorized = function () {
         return self.status == 'ok';
     };
-
-    ngRegisterTopicHandler($scope, 'checkpoint.auth.required', function(target) {
-        authRequiredPresenter(target, $scope);
-    });
 }
 
 function ActiveUserHasPermission(account, ngRegisterTopicHandler) {
