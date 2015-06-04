@@ -995,4 +995,27 @@ describe('checkpoint', function () {
             });
         });
     });
+
+    describe('checkpointWelcomeMessage controller', function () {
+        var ctrl, $location, $controller;
+
+        beforeEach(inject(function (_$location_, _$controller_) {
+            $location = _$location_;
+            $controller = _$controller_;
+        }));
+
+        it('when welcome is in search part of url', function () {
+            $location.search('welcome', true);
+
+            ctrl = $controller('welcomeMessageController');
+
+            expect(ctrl.welcome).toBeTruthy();
+        });
+
+        it('when welcome is not in search part of url', function () {
+            ctrl = $controller('welcomeMessageController');
+
+            expect(ctrl.welcome).toBeUndefined();
+        });
+    });
 });

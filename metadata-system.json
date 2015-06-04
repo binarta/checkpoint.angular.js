@@ -33,7 +33,9 @@
       "checkpoint.recover.password.mail.title": "Herstel Wachtwoord",
       "checkpoint.recover.password.mail.salutation": "Beste",
       "checkpoint.recover.password.mail.message": "Wij hebben een verzoek gekregen om jouw wachtwoord te herstellen. Indien je deze actie niet zelf gestart hebt dan mag je deze e-mail gewoon negeren. Heb je een vermoeden van misbruik dan kan je deze e-mail forwarden naar <a href=\"mailto:support@binarta.com\">support@binarta.com</a>.",
-      "checkpoint.recover.password.mail.recover.link": "Klik hier om je wachtwoord te herstellen."
+      "checkpoint.recover.password.mail.recover.link": "Klik hier om je wachtwoord te herstellen.",
+      "checkpoint.welcome.message.title": "Welkom",
+      "checkpoint.welcome.message.body": "Log opnieuw in met jouw Binarta account om te beginnen met het personaliseren van je website."
     },
     "en":{
       "checkpoint.username.email.label": "Username / Email",
@@ -68,7 +70,9 @@
       "checkpoint.recover.password.mail.title": "Password Recovery Requested",
       "checkpoint.recover.password.mail.salutation": "Hello",
       "checkpoint.recover.password.mail.message": "An attempt to recover your password has been received. If you do not remember making such a request please ignore all further contents of this email. In order to reset your password please click on the following link and enter a new password.",
-      "checkpoint.recover.password.mail.recover.link": "Reset your password"
+      "checkpoint.recover.password.mail.recover.link": "Reset your password",
+      "checkpoint.welcome.message.title": "Welcome",
+      "checkpoint.welcome.message.body": "Log in again with your Binarta account to start customizing your website."
     },
     "fr":{
       "checkpoint.username.email.label": "Nom d'utilisateur / E-mail",
@@ -103,7 +107,9 @@
       "checkpoint.recover.password.mail.title": "Récupération du mot de passe",
       "checkpoint.recover.password.mail.salutation": "Cher(e)",
       "checkpoint.recover.password.mail.message": "Nous avons reçu une demande de récupération de votre mot de passe. Si vous n'êtes pas à l'origine de cette action, vous pouvez ignorer le présent e-mail. Si vous soupçonnez un usage frauduleux, forwardez cet e-mail vers <a href=\"mailto:support@binarta.com\">support@binarta.com</a>.",
-      "checkpoint.recover.password.mail.recover.link": "Cliquez ici pour récupérer votre mot de passe"
+      "checkpoint.recover.password.mail.recover.link": "Cliquez ici pour récupérer votre mot de passe",
+      "checkpoint.welcome.message.title": "Welcome",
+      "checkpoint.welcome.message.body": "Log in again with your Binarta account to start customizing your website."
     },
     "de":{
       "checkpoint.username.email.label": "Benutzername / E-Mail",
@@ -138,7 +144,9 @@
       "checkpoint.recover.password.mail.title": "Passwort wiederherstellen",
       "checkpoint.recover.password.mail.salutation": "Liebe(r)",
       "checkpoint.recover.password.mail.message": "Wir haben eine Anfrage zur Wiederherstellung Ihres Passworts erhalten. Falls Sie diese Anfrage nicht selbst getätigt haben, ignorieren Sie diese E-Mail-Nachricht. Falls Sie einen Missbrauch vermuten, können Sie diese E-Mail-Nachricht weiterleiten an <a href=\"mailto:support@binarta.com\">support@binarta.com</a>.",
-      "checkpoint.recover.password.mail.recover.link": "Klicken Sie hier zur Wiederherstellung Ihres Passworts"
+      "checkpoint.recover.password.mail.recover.link": "Klicken Sie hier zur Wiederherstellung Ihres Passworts",
+      "checkpoint.welcome.message.title": "Welcome",
+      "checkpoint.welcome.message.body": "Log in again with your Binarta account to start customizing your website."
     }
   }
 }

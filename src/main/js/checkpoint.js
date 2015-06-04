@@ -17,6 +17,7 @@ angular.module('checkpoint', ['ngRoute', 'config', 'notifications', 'angular.use
     .controller('AccountMetadataController', ['$scope', 'ngRegisterTopicHandler', 'fetchAccountMetadata', 'authRequiredPresenter', AccountMetadataController])
     .controller('RegistrationController', ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', '$location', RegistrationController])
     .controller('SignoutController', ['$scope', '$http', 'topicMessageDispatcher', 'config', SignoutController])
+    .controller('welcomeMessageController', ['$location', WelcomeMessageController])
     .config(['$routeProvider', function ($routeProvider) {
         $routeProvider
             .when('/signin', {templateUrl: 'partials/checkpoint/signin.html', controller: ['$scope', '$location', 'config', 'signinService', SigninController]})
@@ -440,4 +441,8 @@ function LoginModalDirectiveFactory(config, $modal) {
             };
         }
     };
+}
+
+function WelcomeMessageController($location) {
+    this.welcome = $location.search().welcome;
 }
