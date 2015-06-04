@@ -1,13 +1,13 @@
-<form class="bin-checkpoint-form" ng-submit="submit()" ng-controller="SigninController">
+<form class="bin-checkpoint-form" ng-submit="submit()">
     <div class="form-group">
         <i class="fa fa-user addon"></i>
         <label class="hidden" for="binUsername" i18n code="checkpoint.username.email.label" var="usernameLabel" read-only>{{var}}</label>
-        <input type="text" id="binUsername" class="form-control" placeholder="{{usernameLabel}}" ng-model="username" required autofocus>
+        <input type="text" id="binUsername" class="form-control" placeholder="{{usernameLabel}}" ng-model="$parent.username" required autofocus>
     </div>
     <div class="form-group">
         <i class="fa fa-eye-slash addon"></i>
         <label class="hidden" for="binPassword" i18n code="checkpoint.password.label" var="passwordLabel" read-only>{{var}}</label>
-        <input type="password" id="binPassword" class="form-control" placeholder="{{passwordLabel}}" ng-model="password" required>
+        <input type="password" id="binPassword" class="form-control" placeholder="{{passwordLabel}}" ng-model="$parent.password" required>
     </div>
     <p class="text-danger" ng-if="violation">
         <span i18n code="checkpoint.{{violation}}" default="{{violation}}" read-only>{{var}}</span>
