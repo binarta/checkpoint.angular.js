@@ -131,8 +131,9 @@ describe('checkpoint', function () {
                     $httpBackend.flush();
                 }));
 
-                it('username is on scope', function () {
+                it('username is on scope and ctrl', function () {
                     expect(scope.username).toEqual(username);
+                    expect(ctrl.username).toEqual(username);
                 });
             });
 
@@ -143,79 +144,93 @@ describe('checkpoint', function () {
                     $httpBackend.flush();
                 });
 
-                it('username is not on scope', function () {
+                it('username is not on scope and ctrl', function () {
                     expect(scope.username).toBeUndefined();
+                    expect(ctrl.username).toBeUndefined();
                 });
 
-                it('on submit send post request', function () {
-                    scope.username = username;
-                    scope.password = password;
-                    scope.rememberMe = rememberMe;
-                    scope.submit();
+                [
+                    'scope',
+                    'controller'
+                ].forEach(function (context) {
+                    describe('with ' + context, function () {
+                        var ctx;
+                        beforeEach(function () {
+                            if (context == 'scope') ctx = scope;
+                            if (context == 'controller') ctx = ctrl;
+                        });
 
-                    expect(rest.calls[0].args[0].params.method).toEqual('POST');
-                    expect(rest.calls[0].args[0].params.url).toEqual('api/checkpoint');
-                    expect(rest.calls[0].args[0].params.data).toEqual({
-                        username: username,
-                        password: password,
-                        rememberMe: rememberMe,
-                        namespace: 'namespace'
+                        it('on submit send post request', function () {
+                            ctx.username = username;
+                            ctx.password = password;
+                            ctx.rememberMe = rememberMe;
+                            ctx.submit();
+
+                            expect(rest.calls[0].args[0].params.method).toEqual('POST');
+                            expect(rest.calls[0].args[0].params.url).toEqual('api/checkpoint');
+                            expect(rest.calls[0].args[0].params.data).toEqual({
+                                username: username,
+                                password: password,
+                                rememberMe: rememberMe,
+                                namespace: 'namespace'
+                            });
+                            expect(rest.calls[0].args[0].params.withCredentials).toEqual(true);
+                        });
+
+                        function triggerSuccess(status, data, onSuccess) {
+                            ctx.submit({success: onSuccess});
+                            if (status != 412)
+                                usecaseAdapter.calls[0].args[1]();
+                            else
+                                usecaseAdapter.calls[0].args[2].rejected(data);
+                        }
+
+                        it('on submit success', function () {
+                            triggerSuccess(200);
+
+                            expect(location.path()).toEqual('/redirect');
+                            expect(dispatcher['checkpoint.signin']).toEqual('ok');
+                        });
+
+                        it('on submit success with extra success callback', function () {
+                            var onSuccessExecuted;
+                            triggerSuccess(200, null, function () {
+                                onSuccessExecuted = true;
+                            });
+
+                            expect(onSuccessExecuted).toEqual(true);
+                        });
+
+                        describe('with on signin success target', function () {
+                            beforeEach(function () {
+                                config.onSigninSuccessTarget = '/success/target';
+                            });
+
+                            it('on submit success', function () {
+                                triggerSuccess(200);
+
+                                expect(location.path()).toEqual('/success/target');
+                                expect(config.onSigninSuccessTarget).toBeUndefined();
+                                expect(ctx.violation).toEqual('');
+                            });
+                        });
+
+                        it('on submit success with no redirect', function () {
+                            location.path('/noredirect');
+                            ctx.init({noredirect: true});
+
+                            triggerSuccess(200);
+
+                            expect(location.path()).toEqual('/noredirect');
+                        });
+
+                        it('expose rejection status', function () {
+                            expect(scope.rejected()).toBeUndefined();
+                            triggerSuccess(412, {});
+                            expect(scope.rejected()).toEqual(true);
+                            expect(ctx.violation).toEqual('credentials.mismatch');
+                        });
                     });
-                    expect(rest.calls[0].args[0].params.withCredentials).toEqual(true);
-                });
-
-                function triggerSuccess(status, data, onSuccess) {
-                    scope.submit({success: onSuccess});
-                    if (status != 412)
-                        usecaseAdapter.calls[0].args[1]();
-                    else
-                        usecaseAdapter.calls[0].args[2].rejected(data);
-                }
-
-                it('on submit success', function () {
-                    triggerSuccess(200);
-
-                    expect(location.path()).toEqual('/redirect');
-                    expect(dispatcher['checkpoint.signin']).toEqual('ok');
-                });
-
-                it('on submit success with extra success callback', function () {
-                    var onSuccessExecuted;
-                    triggerSuccess(200, null, function () {
-                        onSuccessExecuted = true;
-                    });
-
-                    expect(onSuccessExecuted).toEqual(true);
-                });
-
-                describe('with on signin success target', function () {
-                    beforeEach(function () {
-                        config.onSigninSuccessTarget = '/success/target';
-                    });
-
-                    it('on submit success', function () {
-                        triggerSuccess(200);
-
-                        expect(location.path()).toEqual('/success/target');
-                        expect(config.onSigninSuccessTarget).toBeUndefined();
-                        expect(scope.violation).toEqual('');
-                    });
-                });
-
-                it('on submit success with no redirect', function () {
-                    location.path('/noredirect');
-                    scope.init({noredirect: true});
-
-                    triggerSuccess(200);
-
-                    expect(location.path()).toEqual('/noredirect');
-                });
-
-                it('expose rejection status', function () {
-                    expect(scope.rejected()).toBeUndefined();
-                    triggerSuccess(412, {});
-                    expect(scope.rejected()).toEqual(true);
-                    expect(scope.violation).toEqual('credentials.mismatch');
                 });
             });
         });

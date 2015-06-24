@@ -10,7 +10,7 @@ describe('checkpoint accounts', function () {
         }
     };
     var presenter;
-    var config = {namespace:'namespace'};
+    var config = {namespace: 'namespace'};
     var dispatcher;
 
     beforeEach(module('angular.usecase.adapter'));
@@ -37,235 +37,284 @@ describe('checkpoint accounts', function () {
 
         beforeEach(inject(function ($controller) {
             config = {};
-            ctrl = $controller(ChangeMyPasswordController, {$scope: scope, config:config})
+            ctrl = $controller(ChangeMyPasswordController, {$scope: scope, config: config})
         }));
 
-        it('on init', function () {
-            expect(scope.currentPassword).toEqual('');
-            expect(scope.newPassword).toEqual('');
-            expect(scope.submit).toBeDefined();
-            expect(scope.forbidden).toEqual(false);
-        });
+        [
+            'scope',
+            'controller'
+        ].forEach(function (context) {
+                describe('with ' + context, function () {
+                    var ctx;
+                    beforeEach(function () {
+                        if (context == 'scope') ctx = scope;
+                        if (context == 'controller') ctx = ctrl;
+                    });
 
-        describe('on change my password send POST request', function () {
-            beforeEach(function () {
-                $httpBackend.expect('POST', 'api/account/password', {
-                    currentPassword: currentPassword,
-                    newPassword: newPassword
-                }).respond(200, '');
+                    it('on init', function () {
+                        expect(ctx.currentPassword).toEqual('');
+                        expect(ctx.newPassword).toEqual('');
+                        expect(ctx.submit).toBeDefined();
+                        expect(ctx.forbidden).toEqual(false);
+                    });
 
-                scope.currentPassword = currentPassword;
-                scope.newPassword = newPassword;
-                scope.submit();
+                    describe('on change my password send POST request', function () {
+                        beforeEach(function () {
+                            $httpBackend.expect('POST', 'api/account/password', {
+                                currentPassword: currentPassword,
+                                newPassword: newPassword
+                            }).respond(200, '');
 
-                expect(scope.ok).toEqual(false);
-                expect(scope.forbidden).toEqual(false);
+                            ctx.currentPassword = currentPassword;
+                            ctx.newPassword = newPassword;
+                            ctx.submit();
 
-                $httpBackend.flush();
+                            expect(ctx.ok).toEqual(false);
+                            expect(ctx.forbidden).toEqual(false);
+
+                            $httpBackend.flush();
+                        });
+
+                        it('ok flag is true', function () {
+                            expect(ctx.ok).toEqual(true);
+                        });
+
+                        it('fields are reset', function () {
+                            expect(ctx.currentPassword).toEqual('');
+                            expect(ctx.newPassword).toEqual('');
+                        });
+                    });
+
+                    it('on change with base uri', function () {
+                        config.baseUri = 'http://host/context/';
+                        $httpBackend.expect('POST', config.baseUri + 'api/account/password').respond(200);
+                        ctx.submit();
+                        $httpBackend.flush();
+                    });
+
+                    it('on change my password forbidden', function () {
+                        $httpBackend.when('POST', /.*/).respond(403, '');
+
+                        ctx.submit();
+                        $httpBackend.flush();
+
+                        expect(ctx.forbidden).toBe(true);
+                    });
+                });
             });
-
-            it('ok flag is true', function () {
-                expect(scope.ok).toEqual(true);
-            });
-
-            it('fields are reset', function () {
-                expect(scope.currentPassword).toEqual('');
-                expect(scope.newPassword).toEqual('');
-            });
-        });
-
-        it('on change with base uri', function() {
-            config.baseUri = 'http://host/context/';
-            $httpBackend.expect('POST', config.baseUri + 'api/account/password').respond(200);
-            scope.submit();
-            $httpBackend.flush();
-        });
-
-        it('on change my password forbidden', function () {
-            $httpBackend.when('POST', /.*/).respond(403, '');
-
-            scope.submit();
-            $httpBackend.flush();
-
-            expect(scope.forbidden).toBe(true);
-        });
     });
 
-    describe('RecoverPasswordController', function() {
-        beforeEach(inject(function($controller) {
+    describe('RecoverPasswordController', function () {
+        beforeEach(inject(function ($controller) {
             ctrl = $controller(RecoverPasswordController, {$scope: scope, config: config});
             presenter = {};
             usecaseAdapter.andReturn(presenter);
         }));
 
-        describe('on submit', function() {
-            [
-                'baseuri/',
-                null
-            ].forEach(function(uri) {
-                describe("with base uri = " + uri, function() {
-                    beforeEach(function() {
-                        config.baseUri = uri;
-                        scope.email = 'email';
-                        scope.submit();
+        [
+            'scope',
+            'controller'
+        ].forEach(function (context) {
+                describe('with ' + context, function () {
+                    var ctx;
+                    beforeEach(function () {
+                        if (context == 'scope') ctx = scope;
+                        if (context == 'controller') ctx = ctrl;
                     });
 
-                    it('violation is empty', function () {
-                        expect(scope.violation).toEqual('');
-                    });
+                    describe('on submit', function () {
+                        [
+                            'baseuri/',
+                            null
+                        ].forEach(function (uri) {
+                                describe("with base uri = " + uri, function () {
+                                    beforeEach(function () {
+                                        config.baseUri = uri;
+                                        ctx.email = 'email';
+                                        ctx.submit();
+                                    });
 
-                    it('creates presenter', function() {
-                        expect(usecaseAdapter.calls[0].args[0]).toEqual(scope);
-                    });
+                                    it('violation is empty', function () {
+                                        expect(ctx.violation).toEqual('');
+                                    });
 
-                    it('sends PUT request', function() {
-                        expect(presenter.params.method).toEqual('PUT');
-                    });
+                                    it('creates presenter', function () {
+                                        expect(usecaseAdapter.calls[0].args[0]).toEqual(scope);
+                                    });
 
-                    it('to the entity resource', function() {
-                        expect(presenter.params.url).toEqual((uri || '') + 'api/entity/password-reset-token');
-                    });
+                                    it('sends PUT request', function () {
+                                        expect(presenter.params.method).toEqual('PUT');
+                                    });
 
-                    it('passes data', function() {
-                        expect(presenter.params.data.namespace).toEqual(config.namespace);
-                        expect(presenter.params.data.email).toEqual(scope.email);
-                    });
+                                    it('to the entity resource', function () {
+                                        expect(presenter.params.url).toEqual((uri || '') + 'api/entity/password-reset-token');
+                                    });
 
-                    it('sends rest call', function() {
-                        expect(rest.calls[0].args[0]).toEqual(presenter);
-                    });
+                                    it('passes data', function () {
+                                        expect(presenter.params.data.namespace).toEqual(config.namespace);
+                                        expect(presenter.params.data.email).toEqual(ctx.email);
+                                    });
 
-                    it('when rejected because email was empty', function () {
-                        usecaseAdapter.calls[0].args[2].rejected({
-                            email: ['required', 'email', 'mismatch']
-                        });
+                                    it('sends rest call', function () {
+                                        expect(rest.calls[0].args[0]).toEqual(presenter);
+                                    });
 
-                        expect(scope.violation).toEqual('email.required');
-                    });
+                                    it('when rejected because email was empty', function () {
+                                        usecaseAdapter.calls[0].args[2].rejected({
+                                            email: ['required', 'email', 'mismatch']
+                                        });
 
-                    it('when rejected because email was invalid', function () {
-                        usecaseAdapter.calls[0].args[2].rejected({
-                            email: ['email', 'mismatch']
-                        });
+                                        expect(ctx.violation).toEqual('email.required');
+                                    });
 
-                        expect(scope.violation).toEqual('email.invalid');
-                    });
+                                    it('when rejected because email was invalid', function () {
+                                        usecaseAdapter.calls[0].args[2].rejected({
+                                            email: ['email', 'mismatch']
+                                        });
 
-                    it('when rejected because email was unknown', function () {
-                        usecaseAdapter.calls[0].args[2].rejected({
-                            email: ['mismatch']
-                        });
+                                        expect(ctx.violation).toEqual('email.invalid');
+                                    });
 
-                        expect(scope.violation).toEqual('email.mismatch');
+                                    it('when rejected because email was unknown', function () {
+                                        usecaseAdapter.calls[0].args[2].rejected({
+                                            email: ['mismatch']
+                                        });
+
+                                        expect(ctx.violation).toEqual('email.mismatch');
+                                    });
+                                });
+                            });
                     });
                 });
             });
-        });
     });
 
-    describe('ResetPasswordController', function() {
+    describe('ResetPasswordController', function () {
         var resetPresenter = jasmine.createSpy('resetPasswordPresenter');
 
-        describe('when username in query string', function() {
-            beforeEach(inject(function($controller) {
+        describe('when username in query string', function () {
+            beforeEach(inject(function ($controller) {
                 location.search('username', 'clerk');
-                $controller(ResetPasswordController, {$scope:scope, config: config, $location: location, resetPasswordPresenter: resetPresenter});
+                ctrl = $controller(ResetPasswordController, {
+                    $scope: scope,
+                    config: config,
+                    $location: location,
+                    resetPasswordPresenter: resetPresenter
+                });
             }));
 
-            it('expose username on scope', function() {
+            it('expose username on scope and ctrl', function () {
                 expect(scope.username).toEqual('clerk');
+                expect(ctrl.username).toEqual('clerk');
             });
         });
 
-        beforeEach(inject(function($controller) {
-            ctrl = $controller(ResetPasswordController, {$scope:scope, config: config, $location: location, resetPasswordPresenter: resetPresenter});
+        beforeEach(inject(function ($controller) {
+            ctrl = $controller(ResetPasswordController, {
+                $scope: scope,
+                config: config,
+                $location: location,
+                resetPasswordPresenter: resetPresenter
+            });
             presenter = {};
             usecaseAdapter.andReturn(presenter);
         }));
 
-        it('when username is not in query string', function() {
+        it('when username is not in query string', function () {
             expect(scope.username).toBeUndefined();
+            expect(ctrl.username).toBeUndefined();
         });
 
-        describe('on submit', function() {
+        describe('on submit', function () {
             [
-                null,
-                'baseuri/'
-            ].forEach(function(uri) {
-                    describe('with base uri = ' + uri, function() {
-                        beforeEach(function() {
-                            config.baseUri = uri;
-                            scope.password = 'new-password';
-                            scope.locale = 'locale';
-                            location.search('token', 'provided-token');
-                            scope.submit();
+                'scope',
+                'controller'
+            ].forEach(function (context) {
+                    describe('with ' + context, function () {
+                        var ctx;
+                        beforeEach(function () {
+                            if (context == 'scope') ctx = scope;
+                            if (context == 'controller') ctx = ctrl;
                         });
 
-                        it('violation is empty', function () {
-                            expect(scope.violation).toEqual('');
-                        });
+                        [
+                            null,
+                            'baseuri/'
+                        ].forEach(function (uri) {
+                                describe('with base uri = ' + uri, function () {
+                                    beforeEach(function () {
+                                        config.baseUri = uri;
+                                        ctx.password = 'new-password';
+                                        scope.locale = 'locale';
+                                        location.search('token', 'provided-token');
+                                        ctx.submit();
+                                    });
 
-                        it('creates presenter', function() {
-                            expect(usecaseAdapter.calls[0].args[0]).toEqual(scope);
-                        });
+                                    it('violation is empty', function () {
+                                        expect(ctx.violation).toEqual('');
+                                    });
 
-                        it('sends POST request', function() {
-                            expect(presenter.params.method).toEqual('POST');
-                        });
+                                    it('creates presenter', function () {
+                                        expect(usecaseAdapter.calls[0].args[0]).toEqual(scope);
+                                    });
 
-                        it('to the account resource', function() {
-                            expect(presenter.params.url).toEqual((uri || '') + 'api/account/reset/password');
-                        });
+                                    it('sends POST request', function () {
+                                        expect(presenter.params.method).toEqual('POST');
+                                    });
 
-                        it('passes data', function() {
-                            expect(presenter.params.data.namespace).toEqual(config.namespace);
-                            expect(presenter.params.data.password).toEqual(scope.password);
-                            expect(presenter.params.data.token).toEqual('provided-token');
-                        });
+                                    it('to the account resource', function () {
+                                        expect(presenter.params.url).toEqual((uri || '') + 'api/account/reset/password');
+                                    });
 
-                        it('sends rest call', function() {
-                            expect(rest.calls[0].args[0]).toEqual(presenter);
-                        });
+                                    it('passes data', function () {
+                                        expect(presenter.params.data.namespace).toEqual(config.namespace);
+                                        expect(presenter.params.data.password).toEqual(ctx.password);
+                                        expect(presenter.params.data.token).toEqual('provided-token');
+                                    });
 
-                        it('when rejected because password was empy', function () {
-                            usecaseAdapter.calls[0].args[2].rejected({
-                                password: ['required']
+                                    it('sends rest call', function () {
+                                        expect(rest.calls[0].args[0]).toEqual(presenter);
+                                    });
+
+                                    it('when rejected because password was empy', function () {
+                                        usecaseAdapter.calls[0].args[2].rejected({
+                                            password: ['required']
+                                        });
+
+                                        expect(ctx.violation).toEqual('password.required');
+                                    });
+
+                                    it('when rejected because no token is given', function () {
+                                        usecaseAdapter.calls[0].args[2].rejected({
+                                            token: ['required']
+                                        });
+
+                                        expect(ctx.violation).toEqual('token.required');
+                                    });
+
+                                    it('when rejected because token is invalid', function () {
+                                        usecaseAdapter.calls[0].args[2].rejected({
+                                            token: ['mismatch']
+                                        });
+
+                                        expect(ctx.violation).toEqual('token.mismatch');
+                                    });
+                                });
                             });
-
-                            expect(scope.violation).toEqual('password.required');
-                        });
-
-                        it('when rejected because no token is given', function () {
-                            usecaseAdapter.calls[0].args[2].rejected({
-                                token: ['required']
-                            });
-
-                            expect(scope.violation).toEqual('token.required');
-                        });
-
-                        it('when rejected because token is invalid', function () {
-                            usecaseAdapter.calls[0].args[2].rejected({
-                                token: ['mismatch']
-                            });
-
-                            expect(scope.violation).toEqual('token.mismatch');
-                        });
                     });
                 });
-
-
         });
     });
 
-    describe('ResetPasswordPresenter', function() {
+    describe('ResetPasswordPresenter', function () {
         var resetPresenter;
 
-        beforeEach(inject(function(resetPasswordPresenter) {
+        beforeEach(inject(function (resetPasswordPresenter) {
             resetPresenter = resetPasswordPresenter;
         }));
 
-        ['locale', null, ''].forEach(function(locale) {
-            it('redirects to login with locale = ' + locale, function() {
+        ['locale', null, ''].forEach(function (locale) {
+            it('redirects to login with locale = ' + locale, function () {
                 resetPresenter({locale: locale});
                 expect(location.path()).toEqual((locale ? '/' + locale : '') + '/signin');
             });
@@ -276,21 +325,24 @@ describe('checkpoint accounts', function () {
             expect(location.path()).toEqual('/signin');
         });
 
-        it('fires system success', function() {
+        it('fires system success', function () {
             resetPresenter(scope);
-            expect(dispatcher['system.success']).toEqual({code:'checkpoint.reset.password.success', default:'Password was successfully updated'});
+            expect(dispatcher['system.success']).toEqual({
+                code: 'checkpoint.reset.password.success',
+                default: 'Password was successfully updated'
+            });
         })
     });
 
-    describe('RecoverPasswordPresenter', function() {
+    describe('RecoverPasswordPresenter', function () {
         var recoverPresenter;
 
-        beforeEach(inject(function(recoverPasswordPresenter) {
+        beforeEach(inject(function (recoverPasswordPresenter) {
             recoverPresenter = recoverPasswordPresenter;
         }));
 
-        ['locale', null, ''].forEach(function(locale) {
-            it('redirects to with locale = ' + locale, function() {
+        ['locale', null, ''].forEach(function (locale) {
+            it('redirects to with locale = ' + locale, function () {
                 recoverPresenter({locale: locale});
                 expect(location.path()).toEqual((locale ? '/' + locale : '') + '/password/token/sent');
             });

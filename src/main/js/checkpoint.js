@@ -20,8 +20,8 @@ angular.module('checkpoint', ['ngRoute', 'config', 'notifications', 'angular.use
     .controller('welcomeMessageController', ['$location','$rootScope', WelcomeMessageController])
     .config(['$routeProvider', function ($routeProvider) {
         $routeProvider
-            .when('/signin', {templateUrl: 'partials/checkpoint/signin.html', controller: 'SigninController'})
-            .when('/:locale/signin', {templateUrl: 'partials/checkpoint/signin.html', controller: 'SigninController'})
+            .when('/signin', {templateUrl: 'partials/checkpoint/signin.html', controller: 'SigninController as checkpoint'})
+            .when('/:locale/signin', {templateUrl: 'partials/checkpoint/signin.html', controller: 'SigninController as checkpoint'})
     }]);
 
 function SignoutController($scope, $http, topicMessageDispatcher, config) {
@@ -75,24 +75,34 @@ function SigninController($scope, $location, config, signinService, account) {
         self.config = {};
 
         $scope.username = $location.search().username;
+        self.username = $scope.username;
 
-        $scope.init = function (config) {
+        $scope.init = init;
+        self.init = init;
+        function init (config) {
             self.config = config;
-        };
+        }
 
         function isRedirectEnabled() {
             return !self.config.noredirect;
         }
 
         $scope.submit = function (args) {
+            submit(args, $scope);
+        };
+        self.submit = function (args) {
+            submit(args, self);
+        };
+
+        function submit(args, scope) {
             self.rejected = false;
-            $scope.violation = '';
+            scope.violation = '';
             signinService({
                 $scope:$scope,
                 request:{
-                    username: $scope.username,
-                    password: $scope.password,
-                    rememberMe: $scope.rememberMe
+                    username: scope.username,
+                    password: scope.password,
+                    rememberMe: scope.rememberMe
                 },
                 success:function() {
                     if(isRedirectEnabled()) $location.path(config.onSigninSuccessTarget || config.redirectUri || '/');
@@ -101,10 +111,10 @@ function SigninController($scope, $location, config, signinService, account) {
                 },
                 rejected:function() {
                     self.rejected = true;
-                    $scope.violation = 'credentials.mismatch';
+                    scope.violation = 'credentials.mismatch';
                 }
             });
-        };
+        }
 
         $scope.rejected = function () {
             return self.rejected;
