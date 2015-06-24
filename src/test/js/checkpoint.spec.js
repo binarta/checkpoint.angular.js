@@ -114,12 +114,23 @@ describe('checkpoint', function () {
     });
 
     describe('SigninController', function () {
-        var $controller;
+        var $controller, jQuerySelector, jQueryTriggeredEvent;
 
         beforeEach(inject(function (_$controller_, config) {
             $controller = _$controller_;
             config.namespace = 'namespace';
             config.redirectUri = 'redirect';
+
+            jQuerySelector = undefined;
+            jQueryTriggeredEvent = undefined;
+            $ = function (selector) {
+                jQuerySelector = selector;
+                return {
+                    trigger: function (event) {
+                        jQueryTriggeredEvent = event;
+                    }
+                }
+            }
         }));
 
         describe('when unauthenticated', function () {
@@ -158,6 +169,13 @@ describe('checkpoint', function () {
                         beforeEach(function () {
                             if (context == 'scope') ctx = scope;
                             if (context == 'controller') ctx = ctrl;
+                        });
+
+                        it('on submit fire change event on inputs to make sure models are updated', function () {
+                            ctx.submit();
+
+                            expect(jQuerySelector).toEqual('form input[type="password"]');
+                            expect(jQueryTriggeredEvent).toEqual('change');
                         });
 
                         it('on submit send post request', function () {

@@ -95,6 +95,9 @@ function SigninController($scope, $location, config, signinService, account) {
         };
 
         function submit(args, scope) {
+            //Fix for browsers that doesn't trigger an event when auto-filling password fields which in turn won't update variables.
+            $('form input[type="password"]').trigger('change');
+
             self.rejected = false;
             scope.violation = '';
             signinService({
