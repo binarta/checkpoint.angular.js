@@ -15,13 +15,15 @@ angular.module('checkpoint', ['ngRoute', 'config', 'notifications', 'angular.use
     .directive('loginModal', ['config', '$modal', LoginModalDirectiveFactory])
     .controller('SigninController', ['$scope', '$location', 'config', 'signinService', 'account', SigninController])
     .controller('AccountMetadataController', ['$scope', 'fetchAccountMetadata', AccountMetadataController])
-    .controller('RegistrationController', ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', '$location', RegistrationController])
+    .controller('RegistrationController', ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', '$location', 'topicMessageDispatcher', 'registrationRequestMessageMapper', RegistrationController])
     .controller('SignoutController', ['$scope', '$http', 'topicMessageDispatcher', 'config', SignoutController])
     .controller('welcomeMessageController', ['$location','$rootScope', WelcomeMessageController])
     .config(['$routeProvider', function ($routeProvider) {
         $routeProvider
             .when('/signin', {templateUrl: 'partials/checkpoint/signin.html', controller: 'SigninController as checkpoint'})
             .when('/:locale/signin', {templateUrl: 'partials/checkpoint/signin.html', controller: 'SigninController as checkpoint'})
+            .when('/register', {templateUrl: 'partials/register.html', controller: ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', '$location', 'topicMessageDispatcher', 'registrationRequestMessageMapper', RegistrationController]})
+            .when('/:locale/register', {templateUrl: 'partials/register.html', controller: ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', '$location', 'topicMessageDispatcher', 'registrationRequestMessageMapper', RegistrationController]})
     }]);
 
 function SignoutController($scope, $http, topicMessageDispatcher, config) {
