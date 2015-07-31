@@ -5,7 +5,6 @@
     "./src/main/js/checkpoint.accounts.js",
     "./src/main/js/checkpoint-tpls-bootstrap3.js",
     "./less/checkpoint.less",
-    "./metadata.json",
     "./metadata-system.json"
   ],
   "dependencies": {
