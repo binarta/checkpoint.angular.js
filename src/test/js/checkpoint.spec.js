@@ -935,156 +935,166 @@ describe('checkpoint', function () {
             config.namespace = 'namespace';
         }));
 
-        describe('with invalid data', function () {
-            beforeEach(function () {
-                scope.registrationForm = {
-                    $invalid: true,
-                    email: {
-                        $invalid: true
-                    },
-                    password: {
-                        $invalid: true
-                    },
-                    vat: {
-                        $invalid: true
-                    }
-                };
-
-                scope.register();
-            });
-
-            it('put violations on scope', function () {
-                expect(scope.violations).toEqual({
-                    email: ['required'],
-                    password: ['required'],
-                    vat: ['required']
-                })
-            });
-
-            it('rest service not called yet', function () {
-                expect(rest).not.toHaveBeenCalled();
-            });
-        });
-
-        describe('with all data', function () {
-            beforeEach(function () {
-                scope.username = 'username';
-                scope.email = 'email';
-                scope.password = 'password';
-                scope.vat = 'vat';
-                scope.register();
-            });
-
-            it('puts scope on presenter', function () {
-                expect(usecaseAdapter.calls[0].args[0]).toEqual(scope);
-            });
-
-            it('populates params on presenter', function () {
-                expect(presenter.params.method).toEqual('PUT');
-                expect(presenter.params.url).toEqual('api/accounts');
-                expect(presenter.params.data.namespace).toEqual(config.namespace);
-                expect(presenter.params.data.username).toEqual(scope.username);
-                expect(presenter.params.data.email).toEqual(scope.email);
-                expect(presenter.params.data.alias).toEqual(scope.username);
-                expect(presenter.params.data.password).toEqual(scope.password);
-                expect(presenter.params.data.vat).toEqual(scope.vat);
-            });
-
-            it('populates params on presenter with base uri', function () {
-                config.baseUri = 'baseUri/';
-                scope.register();
-                expect(presenter.params.method).toEqual('PUT');
-                expect(presenter.params.url).toEqual('baseUri/api/accounts');
-                expect(presenter.params.data.namespace).toEqual(config.namespace);
-                expect(presenter.params.data.username).toEqual(scope.username);
-                expect(presenter.params.data.email).toEqual(scope.email);
-                expect(presenter.params.data.alias).toEqual(scope.username);
-                expect(presenter.params.data.password).toEqual(scope.password);
-                expect(presenter.params.data.vat).toEqual(scope.vat);
-            });
-
-            it('populates params on presenter based on registered mappers', inject(function (registrationRequestMessageMapperRegistry) {
-                registrationRequestMessageMapperRegistry.add(function (scope) {
-                    return function (it) {
-                        it.customField = scope.customField;
-                        return it;
-                    }
-                });
-                scope.customField = '1234';
-                scope.register();
-                expect(presenter.params.data.customField).toEqual('1234');
-            }));
-
-            it('calls rest service', function () {
-                expect(rest.calls[0].args[0]).toEqual(presenter);
-            });
-
-            describe('given registration success', function () {
-                describe('and locale is known', function () {
+        [
+            'scope',
+            'controller'
+        ].forEach(function (context) {
+                describe('with ' + context, function () {
+                    var ctx;
                     beforeEach(function () {
-                        scope.locale = 'locale';
-                        usecaseAdapter.calls[0].args[1]();
+                        if (context == 'scope') ctx = scope;
+                        if (context == 'controller') ctx = ctrl;
                     });
 
-                    it('raises system.success notification', function () {
-                        expect(dispatcher['system.success']).toEqual({
-                            code: 'checkpoint.registration.completed',
-                            default: 'Congratulations, your account has been created.'
+                    describe('with invalid data', function () {
+                        beforeEach(function () {
+                            scope.registrationForm = {
+                                $invalid: true,
+                                email: {
+                                    $invalid: true
+                                },
+                                password: {
+                                    $invalid: true
+                                },
+                                vat: {
+                                    $invalid: true
+                                }
+                            };
+
+                            ctx.register();
+                        });
+
+                        it('put violations on scope', function () {
+                            expect(scope.violations).toEqual({
+                                email: ['required'],
+                                password: ['required'],
+                                vat: ['required']
+                            })
+                        });
+
+                        it('rest service not called yet', function () {
+                            expect(rest).not.toHaveBeenCalled();
                         });
                     });
 
-                    it('redirects to root', function () {
-                        expect(location.path()).toEqual('/locale/signin');
-                    });
-                });
+                    describe('with all data', function () {
+                        beforeEach(function () {
+                            ctx.username = 'username';
+                            ctx.email = 'email';
+                            ctx.password = 'password';
+                            ctx.vat = 'vat';
+                            ctx.register();
+                        });
 
-                describe('and locale is unknown', function () {
-                    beforeEach(function () {
-                        usecaseAdapter.calls[0].args[1]();
-                    });
+                        it('puts scope on presenter', function () {
+                            expect(usecaseAdapter.calls[0].args[0]).toEqual(scope);
+                        });
 
-                    it('raises system.success notification', function () {
-                        expect(dispatcher['system.success']).toEqual({
-                            code: 'checkpoint.registration.completed',
-                            default: 'Congratulations, your account has been created.'
+                        it('populates params on presenter', function () {
+                            expect(presenter.params.method).toEqual('PUT');
+                            expect(presenter.params.url).toEqual('api/accounts');
+                            expect(presenter.params.data.namespace).toEqual(config.namespace);
+                            expect(presenter.params.data.username).toEqual(ctx.username);
+                            expect(presenter.params.data.email).toEqual(ctx.email);
+                            expect(presenter.params.data.alias).toEqual(ctx.username);
+                            expect(presenter.params.data.password).toEqual(ctx.password);
+                            expect(presenter.params.data.vat).toEqual(ctx.vat);
+                        });
+
+                        it('populates params on presenter with base uri', function () {
+                            config.baseUri = 'baseUri/';
+                            ctx.register();
+                            expect(presenter.params.method).toEqual('PUT');
+                            expect(presenter.params.url).toEqual('baseUri/api/accounts');
+                            expect(presenter.params.data.namespace).toEqual(config.namespace);
+                            expect(presenter.params.data.username).toEqual(ctx.username);
+                            expect(presenter.params.data.email).toEqual(ctx.email);
+                            expect(presenter.params.data.alias).toEqual(ctx.username);
+                            expect(presenter.params.data.password).toEqual(ctx.password);
+                            expect(presenter.params.data.vat).toEqual(ctx.vat);
+                        });
+
+                        it('populates params on presenter based on registered mappers', inject(function (registrationRequestMessageMapperRegistry) {
+                            registrationRequestMessageMapperRegistry.add(function (scope) {
+                                return function (it) {
+                                    it.customField = scope.customField;
+                                    return it;
+                                }
+                            });
+                            ctx.customField = '1234';
+                            ctx.register();
+                            expect(presenter.params.data.customField).toEqual('1234');
+                        }));
+
+                        it('calls rest service', function () {
+                            expect(rest.calls[0].args[0]).toEqual(presenter);
+                        });
+
+                        describe('given registration success', function () {
+                            describe('and locale is known', function () {
+                                beforeEach(function () {
+                                    scope.locale = 'locale';
+                                    usecaseAdapter.calls[0].args[1]();
+                                });
+
+                                it('raises system.success notification', function () {
+                                    expect(dispatcher['system.success']).toEqual({
+                                        code: 'checkpoint.registration.completed',
+                                        default: 'Congratulations, your account has been created.'
+                                    });
+                                });
+
+                                it('redirects to root', function () {
+                                    expect(location.path()).toEqual('/locale/signin');
+                                });
+                            });
+
+                            describe('and locale is unknown', function () {
+                                beforeEach(function () {
+                                    usecaseAdapter.calls[0].args[1]();
+                                });
+
+                                it('raises system.success notification', function () {
+                                    expect(dispatcher['system.success']).toEqual({
+                                        code: 'checkpoint.registration.completed',
+                                        default: 'Congratulations, your account has been created.'
+                                    });
+                                });
+
+                                it('redirects to root', function () {
+                                    expect(location.path()).toEqual('/signin');
+                                });
+                            });
+                        });
+
+                        describe('given registration rejected', function () {
+                            beforeEach(function () {
+                                usecaseAdapter.calls[0].args[2].rejected();
+                            });
+
+                            it('raises checkpoint.registration.rejected notification', function () {
+                                expect(dispatcher['checkpoint.registration.rejected']).toEqual('rejected');
+                            });
                         });
                     });
 
-                    it('redirects to root', function () {
-                        expect(location.path()).toEqual('/signin');
+                    describe('with only required data', function () {
+                        beforeEach(function () {
+                            ctx.email = 'email';
+                            ctx.password = 'password';
+                            ctx.register();
+                        });
+
+                        it('populates params on presenter', function () {
+                            expect(presenter.params.data.username).toEqual('email');
+                            expect(presenter.params.data.email).toEqual('email');
+                            expect(presenter.params.data.alias).toEqual('email');
+                            expect(presenter.params.data.password).toEqual('password');
+                            expect(presenter.params.data.vat).toBeUndefined();
+                        });
                     });
                 });
             });
-
-            describe('given registration rejected', function () {
-                beforeEach(function () {
-                    usecaseAdapter.calls[0].args[2].rejected();
-                });
-
-                it('raises checkpoint.registration.rejected notification', function () {
-                    expect(dispatcher['checkpoint.registration.rejected']).toEqual('rejected');
-                });
-            });
-        });
-
-        describe('with only required data', function () {
-            beforeEach(function () {
-                scope.username = undefined;
-                scope.email = 'email';
-                scope.password = 'password';
-                scope.vat = undefined;
-                scope.register();
-            });
-
-            it('populates params on presenter', function () {
-                expect(presenter.params.data.username).toEqual('email');
-                expect(presenter.params.data.email).toEqual('email');
-                expect(presenter.params.data.alias).toEqual('email');
-                expect(presenter.params.data.password).toEqual('password');
-                expect(presenter.params.data.vat).toBeUndefined();
-            });
-
-        });
     });
 
     describe('login modal directive', function () {

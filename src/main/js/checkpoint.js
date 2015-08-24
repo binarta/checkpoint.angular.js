@@ -22,8 +22,8 @@ angular.module('checkpoint', ['ngRoute', 'config', 'notifications', 'angular.use
         $routeProvider
             .when('/signin', {templateUrl: 'partials/checkpoint/signin.html', controller: 'SigninController as checkpoint'})
             .when('/:locale/signin', {templateUrl: 'partials/checkpoint/signin.html', controller: 'SigninController as checkpoint'})
-            .when('/register', {templateUrl: 'partials/register.html', controller: 'RegistrationController'})
-            .when('/:locale/register', {templateUrl: 'partials/register.html', controller: 'RegistrationController'})
+            .when('/register', {templateUrl: 'partials/register.html', controller: 'RegistrationController as checkpoint'})
+            .when('/:locale/register', {templateUrl: 'partials/register.html', controller: 'RegistrationController as checkpoint'})
     }]);
 
 function SignoutController($scope, $http, topicMessageDispatcher, config) {
@@ -418,7 +418,16 @@ function RegistrationRequestMessageMapperFactory(config, registrationRequestMess
 }
 
 function RegistrationController($scope, usecaseAdapterFactory, config, restServiceHandler, $location, topicMessageDispatcher, registrationRequestMessageMapper) {
-    $scope.register = function() {
+    var self = this;
+
+    $scope.register = function () {
+        register($scope);
+    };
+    this.register = function () {
+        register(self);
+    };
+
+    function register(scope) {
         if ($scope.registrationForm && $scope.registrationForm.$invalid) {
             $scope.violations = {};
             if ($scope.registrationForm.email.$invalid) $scope.violations.email = ['required'];
@@ -443,7 +452,7 @@ function RegistrationController($scope, usecaseAdapterFactory, config, restServi
             presenter.params = {
                 url: baseUri + 'api/accounts',
                 method: 'PUT',
-                data: registrationRequestMessageMapper($scope)
+                data: registrationRequestMessageMapper(scope)
             };
             restServiceHandler(presenter);
         }

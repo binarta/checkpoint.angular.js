@@ -1,27 +1,30 @@
-<form class="bin-checkpoint-form" ng-submit="register()" name="registrationForm">
+<form class="bin-checkpoint-form" ng-submit="checkpoint.register()" name="registrationForm">
     <div class="form-group" ng-class="{'has-error': violations.email}">
         <i class="fa fa-envelope-o addon"></i>
         <label class="hidden" for="email" i18n code="checkpoint.email.label" var="emailLabel" read-only>{{::var}}</label>
-        <input type="email" id="email" name="email" class="form-control" placeholder="{{::emailLabel}}" ng-model="email" required autofocus>
+        <input type="email" id="email" name="email" class="form-control" placeholder="{{::emailLabel}}"
+               ng-model="checkpoint.email" required autofocus>
     </div>
     <div class="form-group" ng-class="{'has-error': violations.password}">
         <i class="fa fa-eye-slash addon"></i>
         <label class="hidden" for="password" i18n code="checkpoint.password.label" var="passwordLabel" read-only>{{::var}}</label>
-        <input type="password" id="password" name="password" class="form-control" placeholder="{{::passwordLabel}}" ng-model="password" required autofocus>
+        <input type="password" id="password" name="password" class="form-control" placeholder="{{::passwordLabel}}"
+               ng-model="checkpoint.password" required autofocus>
     </div>
 
     <hr>
 
     <div class="checkbox">
         <label>
-            <input type="checkbox" name="company" ng-model="company" ng-true-value="'yes'" ng-false-value="'no'">
+            <input type="checkbox" name="company" ng-model="checkpoint.company" ng-true-value="'yes'" ng-false-value="'no'">
             <span i18n code="checkpoint.i.represent.a.company" read-only>{{::var}}</span>
         </label>
     </div>
     <div class="form-group" ng-class="{'has-error': violations.vat}" ng-if="company == 'yes'">
         <i class="fa fa-building-o addon"></i>
         <label class="hidden" for="vat" i18n code="checkpoint.vat.label" var="vatLabel" read-only>{{::var}}</label>
-        <input type="text" id="vat" name="vat" class="form-control" placeholder="{{::vatLabel}}" ng-model="vat" required autofocus>
+        <input type="text" id="vat" name="vat" class="form-control" placeholder="{{::vatLabel}}"
+               ng-model="checkpoint.vat" required autofocus>
         <small class="help-block" i18n code="checkpoint.vat.help" read-only>
             <i class="fa fa-question-circle fa-fw"></i> {{::var}}
         </small>
@@ -30,7 +33,8 @@
     <hr>
 
     <div class="form-group">
-        <div class="captcha" vc-recaptcha ng-model="captcha" key="'6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'" theme="'light'">
+        <div class="captcha" vc-recaptcha ng-model="checkpoint.captcha" key="6LfF8usSAAAAAKeLHU0D3Xjlqv6SqVwymcqB-SHg"
+             theme="white">
         </div>
     </div>
     <div class="form-group">
