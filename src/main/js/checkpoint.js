@@ -22,8 +22,8 @@ angular.module('checkpoint', ['ngRoute', 'config', 'notifications', 'angular.use
         $routeProvider
             .when('/signin', {templateUrl: 'partials/checkpoint/signin.html', controller: 'SigninController as checkpoint'})
             .when('/:locale/signin', {templateUrl: 'partials/checkpoint/signin.html', controller: 'SigninController as checkpoint'})
-            .when('/register', {templateUrl: 'partials/register.html', controller: ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', '$location', 'topicMessageDispatcher', 'registrationRequestMessageMapper', RegistrationController]})
-            .when('/:locale/register', {templateUrl: 'partials/register.html', controller: ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', '$location', 'topicMessageDispatcher', 'registrationRequestMessageMapper', RegistrationController]})
+            .when('/register', {templateUrl: 'partials/register.html', controller: 'RegistrationController'})
+            .when('/:locale/register', {templateUrl: 'partials/register.html', controller: 'RegistrationController'})
     }]);
 
 function SignoutController($scope, $http, topicMessageDispatcher, config) {
@@ -408,9 +408,9 @@ function RegistrationRequestMessageMapperFactory(config, registrationRequestMess
             return c(scope)(p);
         }, {
             namespace: config.namespace,
-            username: scope.username,
             email: scope.email,
-            alias: scope.username,
+            username: scope.username || scope.email,
+            alias: scope.username || scope.email,
             password: scope.password,
             vat: scope.vat
         })
@@ -419,25 +419,34 @@ function RegistrationRequestMessageMapperFactory(config, registrationRequestMess
 
 function RegistrationController($scope, usecaseAdapterFactory, config, restServiceHandler, $location, topicMessageDispatcher, registrationRequestMessageMapper) {
     $scope.register = function() {
-        var onSuccess = function() {
-            topicMessageDispatcher.fire('system.success', {
-                code:'checkpoint.registration.completed',
-                default:'Congratulations, your account has been created.'
+        if ($scope.registrationForm && $scope.registrationForm.$invalid) {
+            $scope.violations = {};
+            if ($scope.registrationForm.email.$invalid) $scope.violations.email = ['required'];
+            if ($scope.registrationForm.password.$invalid) $scope.violations.password = ['required'];
+            if ($scope.registrationForm.vat.$invalid) $scope.violations.vat = ['required'];
+        }
+
+        if (!$scope.registrationForm || ($scope.registrationForm && $scope.registrationForm.$valid)) {
+            var onSuccess = function() {
+                topicMessageDispatcher.fire('system.success', {
+                    code:'checkpoint.registration.completed',
+                    default:'Congratulations, your account has been created.'
+                });
+                $location.path(($scope.locale ? $scope.locale : '') + '/signin')
+            };
+            var presenter = usecaseAdapterFactory($scope, onSuccess, {
+                rejected:function() {
+                    topicMessageDispatcher.fire('checkpoint.registration.rejected', 'rejected');
+                }
             });
-            $location.path(($scope.locale ? $scope.locale : '') + '/signin')
-        };
-        var presenter = usecaseAdapterFactory($scope, onSuccess, {
-            rejected:function() {
-                topicMessageDispatcher.fire('checkpoint.registration.rejected', 'rejected');
-            }
-        });
-        var baseUri = config.baseUri || '';
-        presenter.params = {
-            url: baseUri + 'api/accounts',
-            method: 'PUT',
-            data: registrationRequestMessageMapper($scope)
-        };
-        restServiceHandler(presenter);
+            var baseUri = config.baseUri || '';
+            presenter.params = {
+                url: baseUri + 'api/accounts',
+                method: 'PUT',
+                data: registrationRequestMessageMapper($scope)
+            };
+            restServiceHandler(presenter);
+        }
     }
 }
 

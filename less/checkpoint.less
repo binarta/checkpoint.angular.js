@@ -27,6 +27,8 @@
 }
 
 .bin-checkpoint-form {
+  @danger-color: #a94442;
+
   .form-group {
     position: relative;
     input {
@@ -46,9 +48,25 @@
       border-right: 1px solid darken(@bin-checkpoint-background-color, 10%);
       pointer-events: none;
     }
+
+    &.has-error {
+      .addon {
+        color: @danger-color;
+        border-color: @danger-color;
+      }
+    }
   }
 
   button {
     margin-bottom: 10px;
+  }
+
+  @media (max-width: 335px) {
+    .form-group {
+      .captcha {
+        transform: scale(0.85);
+        transform-origin: left;
+      }
+    }
   }
 }

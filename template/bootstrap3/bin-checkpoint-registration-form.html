@@ -1,45 +1,45 @@
-<form class="bin-checkpoint-form" ng-submit="register()" name="registrationForm" ng-init="checked = 'no'">
-    <div class="form-group">
-        <i class="fa fa-user addon"></i>
-        <label class="hidden" for="binUsername" i18n code="checkpoint.username.email.label" var="usernameLabel" read-only>{{var}}</label>
-        <input type="text" id="binUsername" class="form-control" placeholder="{{usernameLabel}}" ng-model="username" required autofocus>
-    </div>
-    <div class="form-group">
+<form class="bin-checkpoint-form" ng-submit="register()" name="registrationForm">
+    <div class="form-group" ng-class="{'has-error': violations.email}">
         <i class="fa fa-envelope-o addon"></i>
-        <label class="hidden" for="binEmail" i18n code="checkpoint.email.label" var="emailLabel" read-only>{{var}}</label>
-        <input type="email" id="binEmail" class="form-control" placeholder="{{emailLabel}}" ng-model="email" required autofocus>
+        <label class="hidden" for="email" i18n code="checkpoint.email.label" var="emailLabel" read-only>{{::var}}</label>
+        <input type="email" id="email" name="email" class="form-control" placeholder="{{::emailLabel}}" ng-model="email" required autofocus>
     </div>
-    <div class="form-group">
+    <div class="form-group" ng-class="{'has-error': violations.password}">
         <i class="fa fa-eye-slash addon"></i>
-        <label class="hidden" for="binPassword" i18n code="checkpoint.password.label" var="passwordLabel" read-only>{{var}}</label>
-        <input type="password" id="binPassword" class="form-control" placeholder="{{passwordLabel}}" ng-model="password" required autofocus>
+        <label class="hidden" for="password" i18n code="checkpoint.password.label" var="passwordLabel" read-only>{{::var}}</label>
+        <input type="password" id="password" name="password" class="form-control" placeholder="{{::passwordLabel}}" ng-model="password" required autofocus>
     </div>
+
+    <hr>
 
     <div class="checkbox">
         <label>
             <input type="checkbox" name="company" ng-model="company" ng-true-value="'yes'" ng-false-value="'no'">
-            <span>I am a company</span>
+            <span i18n code="checkpoint.i.represent.a.company" read-only>{{::var}}</span>
         </label>
     </div>
-    <div class="form-group" ng-if="company == 'yes'">
-        <i class="fa fa-money addon"></i>
-        <label class="hidden" for="binVat" i18n code="checkpoint.vat.label" var="vatLabel" read-only>{{var}}</label>
-        <input type="text" id="binVat" class="form-control" placeholder="{{vatLabel}}" ng-model="vat" required autofocus>
+    <div class="form-group" ng-class="{'has-error': violations.vat}" ng-if="company == 'yes'">
+        <i class="fa fa-building-o addon"></i>
+        <label class="hidden" for="vat" i18n code="checkpoint.vat.label" var="vatLabel" read-only>{{::var}}</label>
+        <input type="text" id="vat" name="vat" class="form-control" placeholder="{{::vatLabel}}" ng-model="vat" required autofocus>
+        <small class="help-block" i18n code="checkpoint.vat.help" read-only>
+            <i class="fa fa-question-circle fa-fw"></i> {{::var}}
+        </small>
     </div>
-    <div class="checkbox">
-        <label>
-            <input type="checkbox" name="checked" ng-model="checked" ng-true-value="'yes'" ng-false-value="'no'">
-            <span i18n code="checkpoint.registration.terms.label" read-only ng-bind="var"></span>
-        </label>
-    </div>
+
+    <hr>
+
     <div class="form-group">
-        <div vc-recaptcha ng-model="captcha" key="6LfF8usSAAAAAKeLHU0D3Xjlqv6SqVwymcqB-SHg"
-             theme="white">
+        <div class="captcha" vc-recaptcha ng-model="captcha" key="'6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'" theme="'light'">
         </div>
     </div>
-    <p class="text-danger" ng-if="violation">
-        <span i18n code="checkpoint.{{violation}}" default="{{violation}}" read-only>{{var}}</span>
-    </p>
-
-    <button class="btn btn-lg btn-primary btn-block" type="submit" i18n code="checkpoint.register.submit" read-only ng-disabled="checked == 'no'">{{var}}</button>
+    <div class="form-group">
+        <button class="btn btn-lg btn-primary btn-block" type="submit" i18n code="checkpoint.register.submit" read-only
+                ng-disabled="registrationForm.$invalid">
+            {{::var}}
+        </button>
+        <small class="help-block" i18n code="checkpoint.register.terms.agreement" read-only>
+            <i class="fa fa-info-circle fa-fw"></i> {{::var}}
+        </small>
+    </div>
 </form>

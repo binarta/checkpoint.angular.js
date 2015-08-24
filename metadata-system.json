@@ -35,7 +35,12 @@
       "checkpoint.recover.password.mail.message": "Wij hebben een verzoek gekregen om jouw wachtwoord te herstellen. Indien je deze actie niet zelf gestart hebt dan mag je deze e-mail gewoon negeren. Heb je een vermoeden van misbruik dan kan je deze e-mail forwarden naar <a href=\"mailto:support@binarta.com\">support@binarta.com</a>.",
       "checkpoint.recover.password.mail.recover.link": "Klik hier om je wachtwoord te herstellen.",
       "checkpoint.welcome.message.title": "Welkom",
-      "checkpoint.welcome.message.body": "Log opnieuw in met jouw Binarta account om te beginnen met het personaliseren van je website."
+      "checkpoint.welcome.message.body": "Log opnieuw in met jouw Binarta account om te beginnen met het personaliseren van je website.",
+      "checkpoint.i.represent.a.company": "Ik vertegenwoordig een bedrijf",
+      "checkpoint.register.submit": "Registreer",
+      "checkpoint.vat.label": "BTW",
+      "checkpoint.vat.help": "Het BTW nummer moet beginnen met 2 letters, bv. BE123456789",
+      "checkpoint.register.terms.agreement": "Door op registreer te klikken ga ik akkoord met de algemene voorwaarden"
     },
     "en":{
       "checkpoint.username.email.label": "Username / Email",
@@ -57,7 +62,7 @@
       "checkpoint.reset.password.token.sent": "An email has been sent to your email address with further instructions to reset your password. Please check your inbox.",
       "checkpoint.change.password.success": "Your password has been changed.",
       "checkpoint.reset.password.success": "Your password has been updated.",
-      "checkpoint.registration.completed": "Congratulations! Your new Binarta account has been successfully created.",
+      "checkpoint.registration.completed": "Congratulations! Your account has been created.",
       "checkpoint.credentials.mismatch": "The username or password you have entered is invalid",
       "checkpoint.email.required": "Email is required",
       "checkpoint.email.invalid": "Email is invalid",
@@ -72,7 +77,12 @@
       "checkpoint.recover.password.mail.message": "An attempt to recover your password has been received. If you do not remember making such a request please ignore all further contents of this email. In order to reset your password please click on the following link and enter a new password.",
       "checkpoint.recover.password.mail.recover.link": "Reset your password",
       "checkpoint.welcome.message.title": "Welcome",
-      "checkpoint.welcome.message.body": "Log in again with your Binarta account to start customizing your website."
+      "checkpoint.welcome.message.body": "Log in again with your Binarta account to start customizing your website.",
+      "checkpoint.i.represent.a.company": "I represent a company",
+      "checkpoint.register.submit": "Register",
+      "checkpoint.vat.label": "VAT",
+      "checkpoint.vat.help": "Your VAT number should start with 2 letters, e.g. BE123456789",
+      "checkpoint.register.terms.agreement": "By clicking register, I agree to the terms and conditions"
     },
     "fr":{
       "checkpoint.username.email.label": "Nom d'utilisateur / E-mail",
@@ -109,7 +119,12 @@
       "checkpoint.recover.password.mail.message": "Nous avons reçu une demande de récupération de votre mot de passe. Si vous n'êtes pas à l'origine de cette action, vous pouvez ignorer le présent e-mail. Si vous soupçonnez un usage frauduleux, forwardez cet e-mail vers <a href=\"mailto:support@binarta.com\">support@binarta.com</a>.",
       "checkpoint.recover.password.mail.recover.link": "Cliquez ici pour récupérer votre mot de passe",
       "checkpoint.welcome.message.title": "Welcome",
-      "checkpoint.welcome.message.body": "Log in again with your Binarta account to start customizing your website."
+      "checkpoint.welcome.message.body": "Log in again with your Binarta account to start customizing your website.",
+      "checkpoint.i.represent.a.company": "I represent a company",
+      "checkpoint.register.submit": "Enregistrer",
+      "checkpoint.vat.label": "TVA",
+      "checkpoint.vat.help": "Votre numéro de TVA doit commencer par 2 lettres, par exemple: BE123456789",
+      "checkpoint.register.terms.agreement": "En cliquant sur enregistrer, j'accepte les conditions d’utilisation"
     },
     "de":{
       "checkpoint.username.email.label": "Benutzername / E-Mail",
@@ -146,7 +161,12 @@
       "checkpoint.recover.password.mail.message": "Wir haben eine Anfrage zur Wiederherstellung Ihres Passworts erhalten. Falls Sie diese Anfrage nicht selbst getätigt haben, ignorieren Sie diese E-Mail-Nachricht. Falls Sie einen Missbrauch vermuten, können Sie diese E-Mail-Nachricht weiterleiten an <a href=\"mailto:support@binarta.com\">support@binarta.com</a>.",
       "checkpoint.recover.password.mail.recover.link": "Klicken Sie hier zur Wiederherstellung Ihres Passworts",
       "checkpoint.welcome.message.title": "Welcome",
-      "checkpoint.welcome.message.body": "Log in again with your Binarta account to start customizing your website."
+      "checkpoint.welcome.message.body": "Log in again with your Binarta account to start customizing your website.",
+      "checkpoint.i.represent.a.company": "I represent a company",
+      "checkpoint.register.submit": "Registrieren",
+      "checkpoint.vat.label": "MwSt.",
+      "checkpoint.vat.help": "Die MwSt.-Nummer muss mit 2 Buchstaben beginnen. Beispiel: BE123456789",
+      "checkpoint.register.terms.agreement": "Mit einem Klick auf „Registrieren“ erklären Sie Ihre Anerkennung unserer Allgemeinen Geschäftsbedingungen"
     }
   }
 }
