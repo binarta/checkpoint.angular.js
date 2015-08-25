@@ -20,7 +20,7 @@
             <span i18n code="checkpoint.i.represent.a.company" read-only>{{::var}}</span>
         </label>
     </div>
-    <div class="form-group" ng-class="{'has-error': violations.vat}" ng-if="company == 'yes'">
+    <div class="form-group" ng-class="{'has-error': violations.vat}" ng-if="checkpoint.company == 'yes'">
         <i class="fa fa-building-o addon"></i>
         <label class="hidden" for="vat" i18n code="checkpoint.vat.label" var="vatLabel" read-only>{{::var}}</label>
         <input type="text" id="vat" name="vat" class="form-control" placeholder="{{::vatLabel}}"
