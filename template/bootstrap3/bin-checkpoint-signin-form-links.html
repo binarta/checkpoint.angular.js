@@ -1,3 +1,10 @@
-<div>
-    <a ng-href="#!{{localePrefix}}/password/recover" i18n code="checkpoint.recover.password.link" read-only>{{var}}</a>
+<div class="links">
+    <div>
+        <a ng-href="#!{{::localePrefix}}/password/recover" i18n code="checkpoint.recover.password.link" read-only>{{::var}}</a>
+    </div>
+<% if(shop) { %>
+    <div>
+        <a ng-href="#!{{::localePrefix}}/register" i18n code="checkpoint.create.account.link" read-only>{{::var}}</a>
+    </div>
+<% } %>
 </div>
