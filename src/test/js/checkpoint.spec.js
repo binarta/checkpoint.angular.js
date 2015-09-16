@@ -485,6 +485,16 @@ describe('checkpoint', function () {
             });
         });
 
+        describe('when unauthenticated and no callback defined', function () {
+            beforeEach(function () {
+                $httpBackend.expect('GET', /.*/).respond(401);
+                usecase({});
+                $httpBackend.flush();
+            });
+
+            it('do not throw error', function () {});
+        });
+
         describe('when authenticated', function () {
             beforeEach(function () {
                 $httpBackend.expect('GET', /.*/).respond(200, payload);
@@ -506,6 +516,16 @@ describe('checkpoint', function () {
                     assertUnauthorized();
                 });
             });
+        });
+
+        describe('when authenticated and no callback defined', function () {
+            beforeEach(function () {
+                $httpBackend.expect('GET', /.*/).respond(200, payload);
+                usecase({});
+                $httpBackend.flush();
+            });
+
+            it('do not throw error', function () {});
         });
 
         describe('and response.scope is given', function () {
@@ -540,6 +560,33 @@ describe('checkpoint', function () {
                         it('status is ok', function () {
                             assertOk();
                         });
+                    });
+                });
+            });
+
+            describe('when authenticated without callback on response', function () {
+                beforeEach(function () {
+                    $httpBackend.expect('GET', /.*/).respond(200, payload);
+                    usecase({
+                        scope: $rootScope.$new()
+                    });
+                    $httpBackend.flush();
+                });
+
+                describe('and checkpoint.signout event raised', function () {
+                    beforeEach(function () {
+                        topics['checkpoint.signout']('ok');
+                    });
+
+                    it('do not throw error', function () {});
+
+                    describe('and checkpoint.signin event raised', function () {
+                        beforeEach(function () {
+                            topics['checkpoint.signin']('ok');
+                            rootScope.$apply();
+                        });
+
+                        it('do not throw error', function () {});
                     });
                 });
             });

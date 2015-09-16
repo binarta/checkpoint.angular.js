@@ -185,17 +185,21 @@ function AccountService($http, $q, config, topicRegistry, authRequiredPresenter)
 function FetchAccountMetadata(account, ngRegisterTopicHandler) {
     return function (response) {
         function getMetadata() {
-            account.getMetadata().then(function(metadata) {
-                response.ok(metadata);
-            }, function() {
-                response.unauthorized();
-            });
+            account.getMetadata().then(authorized, unauthorized);
         }
         getMetadata();
 
+        function authorized(metadata) {
+            if (response.ok) response.ok(metadata);
+        }
+
+        function unauthorized() {
+            if (response.unauthorized) response.unauthorized();
+        }
+
         if (response.scope) {
             ngRegisterTopicHandler(response.scope, 'checkpoint.signout', function () {
-                response.unauthorized();
+                unauthorized();
             });
 
             ngRegisterTopicHandler(response.scope, 'checkpoint.signin', function () {
