@@ -15,7 +15,7 @@ angular.module('checkpoint', ['ngRoute', 'config', 'notifications', 'angular.use
     .directive('loginModal', ['config', '$modal', LoginModalDirectiveFactory])
     .controller('SigninController', ['$scope', '$location', 'config', 'signinService', 'account', SigninController])
     .controller('AccountMetadataController', ['$scope', 'fetchAccountMetadata', AccountMetadataController])
-    .controller('RegistrationController', ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', '$location', 'topicMessageDispatcher', 'registrationRequestMessageMapper', RegistrationController])
+    .controller('RegistrationController', ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', '$location', 'topicMessageDispatcher', 'registrationRequestMessageMapper', 'signinService', RegistrationController])
     .controller('SignoutController', ['$scope', '$http', 'topicMessageDispatcher', 'config', SignoutController])
     .controller('welcomeMessageController', ['$location','$rootScope', WelcomeMessageController])
     .config(['$routeProvider', function ($routeProvider) {
@@ -421,7 +421,7 @@ function RegistrationRequestMessageMapperFactory(config, registrationRequestMess
     }
 }
 
-function RegistrationController($scope, usecaseAdapterFactory, config, restServiceHandler, $location, topicMessageDispatcher, registrationRequestMessageMapper) {
+function RegistrationController($scope, usecaseAdapterFactory, config, restServiceHandler, $location, topicMessageDispatcher, registrationRequestMessageMapper, signinService) {
     var self = this;
 
     $scope.register = function () {
@@ -445,7 +445,19 @@ function RegistrationController($scope, usecaseAdapterFactory, config, restServi
                     code:'checkpoint.registration.completed',
                     default:'Congratulations, your account has been created.'
                 });
-                $location.path(($scope.locale ? $scope.locale : '') + '/signin')
+
+                signinService({
+                    $scope: $scope,
+                    request: {
+                        username: scope.email,
+                        password: scope.password,
+                        rememberMe: false
+                    },
+                    success: function () {
+                        $location.path(config.onSigninSuccessTarget || '/');
+                        config.onSigninSuccessTarget = undefined;
+                    }
+                });
             };
             var presenter = usecaseAdapterFactory($scope, onSuccess, {
                 rejected:function() {

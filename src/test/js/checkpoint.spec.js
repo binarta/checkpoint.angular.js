@@ -1100,38 +1100,53 @@ describe('checkpoint', function () {
                         });
 
                         describe('given registration success', function () {
-                            describe('and locale is known', function () {
-                                beforeEach(function () {
-                                    scope.locale = 'locale';
-                                    usecaseAdapter.calls[0].args[1]();
-                                });
+                            beforeEach(function () {
+                                usecaseAdapter.calls[0].args[1]();
+                            });
 
-                                it('raises system.success notification', function () {
-                                    expect(dispatcher['system.success']).toEqual({
-                                        code: 'checkpoint.registration.completed',
-                                        default: 'Congratulations, your account has been created.'
-                                    });
-                                });
-
-                                it('redirects to root', function () {
-                                    expect(location.path()).toEqual('/locale/signin');
+                            it('raises system.success notification', function () {
+                                expect(dispatcher['system.success']).toEqual({
+                                    code: 'checkpoint.registration.completed',
+                                    default: 'Congratulations, your account has been created.'
                                 });
                             });
 
-                            describe('and locale is unknown', function () {
-                                beforeEach(function () {
-                                    usecaseAdapter.calls[0].args[1]();
+                            it('signin the new user', function () {
+                                expect(rest.calls[0].args[0].params.method).toEqual('POST');
+                                expect(rest.calls[0].args[0].params.url).toEqual('api/checkpoint');
+                                expect(rest.calls[0].args[0].params.data).toEqual({
+                                    username: ctx.email,
+                                    password: ctx.password,
+                                    rememberMe: false,
+                                    namespace: config.namespace
                                 });
+                                expect(rest.calls[0].args[0].params.withCredentials).toEqual(true);
+                            });
 
-                                it('raises system.success notification', function () {
-                                    expect(dispatcher['system.success']).toEqual({
-                                        code: 'checkpoint.registration.completed',
-                                        default: 'Congratulations, your account has been created.'
+                            describe('on signin success', function () {
+                                describe('and no success target defined', function () {
+                                    beforeEach(function () {
+                                        usecaseAdapter.calls[1].args[1]();
+                                    });
+
+                                    it('redirect to homepage', function () {
+                                        expect(location.path()).toEqual('/');
                                     });
                                 });
 
-                                it('redirects to root', function () {
-                                    expect(location.path()).toEqual('/signin');
+                                describe('and success target is defined', function () {
+                                    beforeEach(function () {
+                                        config.onSigninSuccessTarget = '/target/';
+                                        usecaseAdapter.calls[1].args[1]();
+                                    });
+
+                                    it('redirect to target', function () {
+                                        expect(location.path()).toEqual('/target/');
+                                    });
+
+                                    it('reset target config', function () {
+                                        expect(config.onSigninSuccessTarget).toBeUndefined();
+                                    });
                                 });
                             });
                         });
