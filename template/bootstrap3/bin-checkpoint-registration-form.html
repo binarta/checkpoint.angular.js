@@ -1,3 +1,4 @@
+<% if(shop) { %>
 <form class="bin-checkpoint-form" ng-submit="checkpoint.register()" name="registrationForm">
     <div class="form-group" ng-class="{'has-error': violations.email}">
         <i class="fa fa-envelope-o addon"></i>
@@ -47,3 +48,4 @@
         </small>
     </div>
 </form>
+<% } %>
