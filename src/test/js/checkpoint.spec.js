@@ -646,6 +646,17 @@ describe('checkpoint', function () {
             expect(config.onSigninSuccessTarget).toEqual('/previous/path');
         });
 
+        describe('when already on signin page', function () {
+            beforeEach(function () {
+                location.path('/signin');
+                presenter('/signin');
+            });
+
+            it('should do nothing', function () {
+                expect(config.onSigninSuccessTarget).not.toEqual('/signin');
+            });
+        });
+
         describe('with locale embedded in current route', function () {
             beforeEach(inject(function ($routeParams) {
                 $routeParams.locale = 'lang';
@@ -654,7 +665,18 @@ describe('checkpoint', function () {
             it('when presenting redirect for localized signin', function () {
                 presenter('/previous/path');
                 expect(location.path()).toEqual('/lang/signin');
-            })
+            });
+
+            describe('when already on signin page', function () {
+                beforeEach(function () {
+                    location.path('/signin');
+                    presenter('/lang/signin');
+                });
+
+                it('should do nothing', function () {
+                    expect(config.onSigninSuccessTarget).not.toEqual('/lang/signin');
+                });
+            });
         });
     });
 

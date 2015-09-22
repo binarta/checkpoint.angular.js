@@ -465,8 +465,11 @@ function RegistrationController($scope, usecaseAdapterFactory, config, restServi
 
 function AuthRequiredPresenterFactory(config, $location, $routeParams) {
     return function(target) {
-        config.onSigninSuccessTarget = target;
-        $location.path($routeParams.locale ? '/' + $routeParams.locale + '/signin' : '/signin');
+        var pathToSignin = $routeParams.locale ? '/' + $routeParams.locale + '/signin' : '/signin';
+        if (target != pathToSignin) {
+            config.onSigninSuccessTarget = target;
+            $location.path(pathToSignin);
+        }
     }
 }
 
