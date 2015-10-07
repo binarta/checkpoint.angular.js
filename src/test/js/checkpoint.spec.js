@@ -1267,4 +1267,82 @@ describe('checkpoint', function () {
             expect(ctrl.welcome).toBeUndefined();
         });
     });
+
+    describe('signInWithTokenService', function() {
+        var service;
+
+        beforeEach(inject(function(signInWithTokenService, _signinService_) {
+            service = signInWithTokenService;
+        }));
+
+        describe('with a token in the url', function() {
+            beforeEach(inject(function($location) {
+                $location.search('token', 'T');
+            }));
+
+            describe('and we attempt to sign in', function() {
+                beforeEach(function() {
+                    service()
+                });
+
+                it('then signin service is used for provided token', function() {
+                    expect(rest.calls[0].args[0].params.data.token).toEqual('T');
+                    expect(rest.calls[0].args[0].params.data.username).toBeUndefined();
+                    expect(rest.calls[0].args[0].params.data.password).toBeUndefined();
+                });
+
+                describe('and we are signed in with success', function() {
+                    beforeEach(function() {
+                        usecaseAdapter.calls[0].args[1]();
+                    });
+
+                    iit('then token is removed from location', inject(function($location) {
+                        expect($location.search().token).toBeUndefined();
+                    }));
+                });
+            });
+
+            describe('and we attempt to sign in for a given token', function() {
+                beforeEach(function() {
+                    service({token:'AT'})
+                });
+
+                it('then the signin request is sent for the given token', function() {
+                    expect(rest.calls[0].args[0].params.data.token).toEqual('AT');
+                });
+
+                describe('and we are signed in with success', function() {
+                    beforeEach(function() {
+                        usecaseAdapter.calls[0].args[1]();
+                    });
+
+                    it('then token is removed from location', inject(function($location) {
+                        expect($location.search().token).toBeUndefined();
+                    }));
+                });
+            });
+        });
+
+        describe('without a token in the url', function() {
+            describe('and we attempt to sign in', function() {
+                beforeEach(function() {
+                    service()
+                });
+
+                it('no signin attempt was made', function() {
+                    expect(rest.calls[0]).toBeUndefined();
+                })
+            });
+
+            describe('and we attempt to sign in for a provided token', function() {
+                beforeEach(function() {
+                    service({token:'AT'})
+                });
+
+                it('then a signin attempt for the given token was made', function() {
+                    expect(rest.calls[0].args[0].params.data.token).toEqual('AT');
+                })
+            });
+        });
+    });
 });

@@ -6,6 +6,7 @@ angular.module('checkpoint', ['ngRoute', 'config', 'notifications', 'angular.use
     .factory('registrationRequestMessageMapperRegistry', [RegistrationRequestMessageMapperRegistry])
     .factory('authRequiredPresenter', ['config', '$location', '$routeParams', AuthRequiredPresenterFactory])
     .factory('signinService', ['config', 'usecaseAdapterFactory', 'topicMessageDispatcher', 'restServiceHandler', SigninServiceFactory])
+    .factory('signInWithTokenService', ['signinService', '$location', SignInWithTokenServiceFactory])
     .directive('checkpointPermission', ['ngRegisterTopicHandler', 'activeUserHasPermission', CheckpointHasDirectiveFactory])
     .directive('checkpointPermissionFor', ['activeUserHasPermission', CheckpointPermissionForDirectiveFactory])
     .directive('checkpointIsAuthenticated', ['fetchAccountMetadata', CheckpointIsAuthenticatedDirectiveFactory])
@@ -512,5 +513,20 @@ function WelcomeMessageController($location, $rootScope) {
             removeListener();
             $location.search('welcome', null);
         });
+    }
+}
+
+function SignInWithTokenServiceFactory(signinService, $location) {
+    return function(args) {
+        var token = args && args.token || $location.search().token;
+        if (token) signinService({
+            $scope:{},
+            request:{
+                token:token
+            },
+            success:function() {
+                $location.search('token', undefined);
+            }
+        })
     }
 }
