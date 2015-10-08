@@ -525,7 +525,7 @@ function SignInWithTokenServiceFactory(signinService, $location) {
                 token:token
             },
             success:function() {
-                $location.search('token', undefined);
+                $location.search('token', undefined).replace();
             }
         })
     }

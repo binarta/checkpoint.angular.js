@@ -1271,12 +1271,13 @@ describe('checkpoint', function () {
     describe('signInWithTokenService', function() {
         var service;
 
-        beforeEach(inject(function(signInWithTokenService, _signinService_) {
+        beforeEach(inject(function(signInWithTokenService, _signinService_, $location) {
             service = signInWithTokenService;
+            spyOn($location, 'replace');
         }));
 
         describe('with a token in the url', function() {
-            beforeEach(inject(function($location) {
+            beforeEach(inject(function($location, $rootScope) {
                 $location.search('token', 'T');
             }));
 
@@ -1296,8 +1297,12 @@ describe('checkpoint', function () {
                         usecaseAdapter.calls[0].args[1]();
                     });
 
-                    iit('then token is removed from location', inject(function($location) {
+                    it('then token is removed from location', inject(function($location) {
                         expect($location.search().token).toBeUndefined();
+                    }));
+
+                    it('and the history state record was replaced', inject(function($location) {
+                        expect($location.replace).toHaveBeenCalled();
                     }));
                 });
             });
@@ -1312,9 +1317,9 @@ describe('checkpoint', function () {
                 });
 
                 describe('and we are signed in with success', function() {
-                    beforeEach(function() {
+                    beforeEach(inject(function($rootScope) {
                         usecaseAdapter.calls[0].args[1]();
-                    });
+                    }));
 
                     it('then token is removed from location', inject(function($location) {
                         expect($location.search().token).toBeUndefined();
