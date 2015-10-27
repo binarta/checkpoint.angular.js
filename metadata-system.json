@@ -41,7 +41,8 @@
       "checkpoint.register.submit": "Registreer",
       "checkpoint.vat.label": "BTW",
       "checkpoint.vat.help": "Het BTW nummer moet beginnen met 2 letters, bv. BE123456789",
-      "checkpoint.register.terms.agreement": "Door op registreer te klikken ga ik akkoord met de algemene voorwaarden"
+      "checkpoint.register.terms.agreement": "Door op registreer te klikken ga ik akkoord met de algemene voorwaarden",
+      "checkpoint.session.expired": "Uw sessie is verlopen. Kopieer niet-opgeslagen wijzigingen alvorens terug in te loggen."
     },
     "en":{
       "checkpoint.username.email.label": "Username / Email",
@@ -84,7 +85,8 @@
       "checkpoint.register.submit": "Register",
       "checkpoint.vat.label": "VAT",
       "checkpoint.vat.help": "Your VAT number should start with 2 letters, e.g. BE123456789",
-      "checkpoint.register.terms.agreement": "By clicking register, I agree to the terms and conditions"
+      "checkpoint.register.terms.agreement": "By clicking register, I agree to the terms and conditions",
+      "checkpoint.session.expired": "Your session has expired. Please copy any unsaved changes before logging back in."
     },
     "fr":{
       "checkpoint.username.email.label": "Nom d'utilisateur / E-mail",
@@ -127,7 +129,8 @@
       "checkpoint.register.submit": "Enregistrer",
       "checkpoint.vat.label": "TVA",
       "checkpoint.vat.help": "Votre numéro de TVA doit commencer par 2 lettres, par exemple: BE123456789",
-      "checkpoint.register.terms.agreement": "En cliquant sur enregistrer, j'accepte les conditions d’utilisation"
+      "checkpoint.register.terms.agreement": "En cliquant sur enregistrer, j'accepte les conditions d’utilisation",
+      "checkpoint.session.expired": "Your session has expired. Please copy any unsaved changes before logging back in."
     },
     "de":{
       "checkpoint.username.email.label": "Benutzername / E-Mail",
@@ -170,7 +173,8 @@
       "checkpoint.register.submit": "Registrieren",
       "checkpoint.vat.label": "MwSt.",
       "checkpoint.vat.help": "Die MwSt.-Nummer muss mit 2 Buchstaben beginnen. Beispiel: BE123456789",
-      "checkpoint.register.terms.agreement": "Mit einem Klick auf „Registrieren“ erklären Sie Ihre Anerkennung unserer Allgemeinen Geschäftsbedingungen"
+      "checkpoint.register.terms.agreement": "Mit einem Klick auf „Registrieren“ erklären Sie Ihre Anerkennung unserer Allgemeinen Geschäftsbedingungen",
+      "checkpoint.session.expired": "Your session has expired. Please copy any unsaved changes before logging back in."
     }
   }
 }
