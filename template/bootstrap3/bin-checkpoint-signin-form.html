@@ -10,10 +10,10 @@
         <input type="password" id="binPassword" class="form-control" placeholder="{{::passwordLabel}}" ng-model="checkpoint.password" required>
     </div>
     <p class="text-danger" ng-if="checkpoint.violation">
-        <span i18n code="checkpoint.{{checkpoint.violation}}" default="{{checkpoint.violation}}" read-only>{{var}}</span>
+        <span i18n code="checkpoint.{{::checkpoint.violation}}" default="{{::checkpoint.violation}}" read-only>{{::var}}</span>
     </p>
 
-    <button type="submit" class="btn btn-lg btn-primary btn-block" i18n code="checkpoint.login.submit" read-only>{{var}}</button>
+    <button type="submit" class="btn btn-lg btn-primary btn-block" i18n code="checkpoint.login.submit" read-only>{{::var}}</button>
     <% if(shop) { %>
     <hr>
     <a ng-href="#!{{::localePrefix}}/register" class="btn btn-lg btn-default btn-block" i18n code="checkpoint.create.account.link" read-only>{{::var}}</a>
