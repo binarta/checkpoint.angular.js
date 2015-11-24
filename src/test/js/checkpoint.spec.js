@@ -1278,7 +1278,7 @@ describe('checkpoint', function () {
 
         describe('with a token in the url', function() {
             beforeEach(inject(function($location, $rootScope) {
-                $location.search('token', 'T');
+                $location.search('autoSigninToken', 'T');
             }));
 
             describe('and we attempt to sign in', function() {
@@ -1298,7 +1298,7 @@ describe('checkpoint', function () {
                     });
 
                     it('then token is removed from location', inject(function($location) {
-                        expect($location.search().token).toBeUndefined();
+                        expect($location.search().autoSigninToken).toBeUndefined();
                     }));
 
                     it('and the history state record was replaced', inject(function($location) {

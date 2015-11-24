@@ -518,14 +518,14 @@ function WelcomeMessageController($location, $rootScope) {
 
 function SignInWithTokenServiceFactory(signinService, $location) {
     return function(args) {
-        var token = args && args.token || $location.search().token;
+        var token = args && args.token || $location.search().autoSigninToken;
         if (token) signinService({
             $scope:{},
             request:{
                 token:token
             },
             success:function() {
-                $location.search('token', undefined).replace();
+                $location.search('autoSigninToken', undefined).replace();
             }
         })
     }
