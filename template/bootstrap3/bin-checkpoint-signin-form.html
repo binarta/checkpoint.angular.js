@@ -15,8 +15,12 @@
 
     <button type="submit" class="btn btn-lg btn-primary btn-block" i18n code="checkpoint.login.submit" read-only>{{::var}}</button>
     <% if(shop) { %>
-    <hr>
-    <a ng-href="#!{{::localePrefix}}/register" class="btn btn-lg btn-default btn-block" i18n code="checkpoint.create.account.link" read-only>{{::var}}</a>
+    <div ng-controller="ViewBasketController">
+        <div ng-if="quantity > 0">
+            <hr>
+            <a ng-href="#!{{::localePrefix}}/register" class="btn btn-lg btn-default btn-block" i18n code="checkpoint.create.account.link" read-only>{{::var}}</a>
+        </div>
+    </div>
     <% } %>
 
     <div class="links">
