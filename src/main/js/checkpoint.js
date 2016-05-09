@@ -176,10 +176,23 @@ function AccountService($http, $q, config, topicRegistry, authRequiredPresenter)
         }
         return permissionPromise;
     }
+    
+    function hasPermission(permission) {
+        var deferred = $q.defer();
+        getPermissions().then(function (permissions) {
+            permissions.reduce(function (result, it) {
+                return result || it.name == permission
+            }, false) ? deferred.resolve(true) : deferred.resolve(false);
+        }, function () {
+            deferred.resolve(false);
+        });
+        return deferred.promise;
+    }
 
     return {
         getMetadata: getMetadata,
-        getPermissions: getPermissions
+        getPermissions: getPermissions,
+        hasPermission: hasPermission
     };
 }
 

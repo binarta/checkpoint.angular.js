@@ -421,6 +421,52 @@ describe('checkpoint', function () {
                 callGetPermissions();
             });
         });
+        
+        describe('has permission', function () {
+            var metadata = {principal: 'foo'},
+                permissions = [
+                    {name: 'foo'},
+                    {name: 'bar'},
+                    {name: 'permission'}
+                ];
+
+            beforeEach(function () {
+                $httpBackend.expect('GET', 'base/api/account/metadata').respond(metadata);
+            });
+
+            it('when permitted', function () {
+                var permitted;
+                $httpBackend.expect('POST', 'base/api/query/permission/list', {filter: {namespace: config.namespace, owner: 'foo'}}).respond(permissions);
+                account.hasPermission('permission').then(function (p) {
+                    permitted = p;
+                });
+                $httpBackend.flush();
+
+                expect(permitted).toEqual(true);
+            });
+
+            it('when not permitted', function () {
+                var permitted;
+                $httpBackend.expect('POST', 'base/api/query/permission/list', {filter: {namespace: config.namespace, owner: 'foo'}}).respond(permissions);
+                account.hasPermission('not').then(function (p) {
+                    permitted = p;
+                });
+                $httpBackend.flush();
+
+                expect(permitted).toEqual(false);
+            });
+
+            it('getPermissions call failed', function () {
+                var permitted;
+                $httpBackend.expect('POST', 'base/api/query/permission/list', {filter: {namespace: config.namespace, owner: 'foo'}}).respond(404);
+                account.hasPermission('permission').then(function (p) {
+                    permitted = p;
+                });
+                $httpBackend.flush();
+
+                expect(permitted).toEqual(false);
+            });
+        });
     });
 
     describe('FetchAccountMetadata', function () {
