@@ -1,0 +1,11 @@
+{
+  "default": {
+    "checkpoint": "bower_components/binarta.checkpoint.angular/src/main/js/checkpoint.js",
+    "checkpoint.accounts": "bower_components/binarta.checkpoint.angular/src/main/js/checkpoint.accounts.js",
+    "checkpoint.keepalive": "bower_components/binarta.checkpoint.angular/src/main/js/checkpoint.keepalive.js",
+    "checkpoint.templates": "bower_components/binarta.checkpoint.angular/src/main/js/checkpoint-tpls-bootstrap3.js"
+  },
+  "shop": {
+    "checkpoint.templates": "bower_components/binarta.checkpoint.angular/src/main/js/checkpoint-shop-tpls-bootstrap3.js"
+  }
+}

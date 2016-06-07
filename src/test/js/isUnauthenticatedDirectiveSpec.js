@@ -36,10 +36,10 @@ describe('something', function() {
     it('response ok', function() {
         response.ok();
         expect(scope.unauthenticated).toBeFalsy();
-    })
+    });
 
     it('response unauthorized', function() {
         response.unauthorized();
         expect(scope.unauthenticated).toBeTruthy();
-    })
+    });
 });

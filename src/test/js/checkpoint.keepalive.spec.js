@@ -28,7 +28,7 @@ describe('checkpoint keepalive', function () {
 
     describe('user is logged out', function () {
         beforeEach(function () {
-            fetchAccountMetadata.calls[0].args[0].unauthorized();
+            fetchAccountMetadata.calls.first().args[0].unauthorized();
         });
 
         it('nothing should happen', function () {
@@ -44,7 +44,7 @@ describe('checkpoint keepalive', function () {
 
     describe('when user is logged in', function () {
         beforeEach(function () {
-            fetchAccountMetadata.calls[0].args[0].ok();
+            fetchAccountMetadata.calls.first().args[0].ok();
         });
 
         afterEach(function () {
@@ -101,7 +101,7 @@ describe('checkpoint keepalive', function () {
 
         describe('user logs out', function () {
             beforeEach(function () {
-                fetchAccountMetadata.calls[0].args[0].unauthorized();
+                fetchAccountMetadata.calls.first().args[0].unauthorized();
             });
 
             it('no more keepalives', function () {

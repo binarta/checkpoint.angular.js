@@ -25,7 +25,7 @@ describe('checkpoint', function () {
         usecaseAdapter = usecaseAdapterFactory;
         rest = restServiceHandler;
         presenter = {};
-        usecaseAdapter.andReturn(presenter);
+        usecaseAdapter.and.returnValue(presenter);
     }));
     afterEach(function () {
         $httpBackend.verifyNoOutstandingExpectation();
@@ -94,19 +94,19 @@ describe('checkpoint', function () {
             });
 
             it('send post request', function () {
-                expect(rest.calls[0].args[0].params.method).toEqual('POST');
-                expect(rest.calls[0].args[0].params.url).toEqual('api/checkpoint');
-                expect(rest.calls[0].args[0].params.data).toEqual({
+                expect(rest.calls.first().args[0].params.method).toEqual('POST');
+                expect(rest.calls.first().args[0].params.url).toEqual('api/checkpoint');
+                expect(rest.calls.first().args[0].params.data).toEqual({
                     username: username,
                     password: password,
                     rememberMe: rememberMe,
                     namespace: 'namespace'
                 });
-                expect(rest.calls[0].args[0].params.withCredentials).toEqual(true);
+                expect(rest.calls.first().args[0].params.withCredentials).toEqual(true);
             });
 
             it('success', function () {
-                usecaseAdapter.calls[0].args[1]();
+                usecaseAdapter.calls.first().args[1]();
                 expect(dispatcher['checkpoint.signin']).toEqual('ok');
                 expect(successCallbackExecuted).toEqual(true);
             });
@@ -184,23 +184,23 @@ describe('checkpoint', function () {
                             ctx.rememberMe = rememberMe;
                             ctx.submit();
 
-                            expect(rest.calls[0].args[0].params.method).toEqual('POST');
-                            expect(rest.calls[0].args[0].params.url).toEqual('api/checkpoint');
-                            expect(rest.calls[0].args[0].params.data).toEqual({
+                            expect(rest.calls.first().args[0].params.method).toEqual('POST');
+                            expect(rest.calls.first().args[0].params.url).toEqual('api/checkpoint');
+                            expect(rest.calls.first().args[0].params.data).toEqual({
                                 username: username,
                                 password: password,
                                 rememberMe: rememberMe,
                                 namespace: 'namespace'
                             });
-                            expect(rest.calls[0].args[0].params.withCredentials).toEqual(true);
+                            expect(rest.calls.first().args[0].params.withCredentials).toEqual(true);
                         });
 
                         function triggerSuccess(status, data, onSuccess) {
                             ctx.submit({success: onSuccess});
                             if (status != 412)
-                                usecaseAdapter.calls[0].args[1]();
+                                usecaseAdapter.calls.first().args[1]();
                             else
-                                usecaseAdapter.calls[0].args[2].rejected(data);
+                                usecaseAdapter.calls.first().args[2].rejected(data);
                         }
 
                         it('on submit success', function () {
@@ -279,7 +279,7 @@ describe('checkpoint', function () {
 
         it('on submit send post request', function () {
             scope.submit();
-            expect(rest.calls[0].args[0].params.url).toEqual(baseUri + 'api/checkpoint');
+            expect(rest.calls.first().args[0].params.url).toEqual(baseUri + 'api/checkpoint');
         });
     });
 
@@ -1102,7 +1102,7 @@ describe('checkpoint', function () {
                         });
 
                         it('puts scope on presenter', function () {
-                            expect(usecaseAdapter.calls[0].args[0]).toEqual(scope);
+                            expect(usecaseAdapter.calls.first().args[0]).toEqual(scope);
                         });
 
                         it('populates params on presenter', function () {
@@ -1142,12 +1142,12 @@ describe('checkpoint', function () {
                         }));
 
                         it('calls rest service', function () {
-                            expect(rest.calls[0].args[0]).toEqual(presenter);
+                            expect(rest.calls.first().args[0]).toEqual(presenter);
                         });
 
                         describe('given registration success', function () {
                             beforeEach(function () {
-                                usecaseAdapter.calls[0].args[1]();
+                                usecaseAdapter.calls.first().args[1]();
                             });
 
                             it('raises system.success notification', function () {
@@ -1158,21 +1158,21 @@ describe('checkpoint', function () {
                             });
 
                             it('signin the new user', function () {
-                                expect(rest.calls[0].args[0].params.method).toEqual('POST');
-                                expect(rest.calls[0].args[0].params.url).toEqual('api/checkpoint');
-                                expect(rest.calls[0].args[0].params.data).toEqual({
+                                expect(rest.calls.first().args[0].params.method).toEqual('POST');
+                                expect(rest.calls.first().args[0].params.url).toEqual('api/checkpoint');
+                                expect(rest.calls.first().args[0].params.data).toEqual({
                                     username: ctx.email,
                                     password: ctx.password,
                                     rememberMe: false,
                                     namespace: config.namespace
                                 });
-                                expect(rest.calls[0].args[0].params.withCredentials).toEqual(true);
+                                expect(rest.calls.first().args[0].params.withCredentials).toEqual(true);
                             });
 
                             describe('on signin success', function () {
                                 describe('and no success target defined', function () {
                                     beforeEach(function () {
-                                        usecaseAdapter.calls[1].args[1]();
+                                        usecaseAdapter.calls.mostRecent().args[1]();
                                     });
 
                                     it('redirect to homepage', function () {
@@ -1183,7 +1183,7 @@ describe('checkpoint', function () {
                                 describe('and success target is defined', function () {
                                     beforeEach(function () {
                                         config.onSigninSuccessTarget = '/target/';
-                                        usecaseAdapter.calls[1].args[1]();
+                                        usecaseAdapter.calls.mostRecent().args[1]();
                                     });
 
                                     it('redirect to target', function () {
@@ -1199,7 +1199,7 @@ describe('checkpoint', function () {
 
                         describe('given registration rejected', function () {
                             beforeEach(function () {
-                                usecaseAdapter.calls[0].args[2].rejected();
+                                usecaseAdapter.calls.first().args[2].rejected();
                             });
 
                             it('raises checkpoint.registration.rejected notification', function () {
@@ -1333,14 +1333,14 @@ describe('checkpoint', function () {
                 });
 
                 it('then signin service is used for provided token', function() {
-                    expect(rest.calls[0].args[0].params.data.token).toEqual('T');
-                    expect(rest.calls[0].args[0].params.data.username).toBeUndefined();
-                    expect(rest.calls[0].args[0].params.data.password).toBeUndefined();
+                    expect(rest.calls.first().args[0].params.data.token).toEqual('T');
+                    expect(rest.calls.first().args[0].params.data.username).toBeUndefined();
+                    expect(rest.calls.first().args[0].params.data.password).toBeUndefined();
                 });
 
                 describe('and we are signed in with success', function() {
                     beforeEach(function() {
-                        usecaseAdapter.calls[0].args[1]();
+                        usecaseAdapter.calls.first().args[1]();
                     });
 
                     it('then token is removed from location', inject(function($location) {
@@ -1359,12 +1359,12 @@ describe('checkpoint', function () {
                 });
 
                 it('then the signin request is sent for the given token', function() {
-                    expect(rest.calls[0].args[0].params.data.token).toEqual('AT');
+                    expect(rest.calls.first().args[0].params.data.token).toEqual('AT');
                 });
 
                 describe('and we are signed in with success', function() {
                     beforeEach(inject(function($rootScope) {
-                        usecaseAdapter.calls[0].args[1]();
+                        usecaseAdapter.calls.first().args[1]();
                     }));
 
                     it('then token is removed from location', inject(function($location) {
@@ -1381,7 +1381,7 @@ describe('checkpoint', function () {
                 });
 
                 it('no signin attempt was made', function() {
-                    expect(rest.calls[0]).toBeUndefined();
+                    expect(rest.calls.first()).toBeUndefined();
                 })
             });
 
@@ -1391,7 +1391,7 @@ describe('checkpoint', function () {
                 });
 
                 it('then a signin attempt for the given token was made', function() {
-                    expect(rest.calls[0].args[0].params.data.token).toEqual('AT');
+                    expect(rest.calls.first().args[0].params.data.token).toEqual('AT');
                 })
             });
         });

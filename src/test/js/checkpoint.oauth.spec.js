@@ -13,7 +13,7 @@ describe('checkpoint.oauth', function () {
         $httpBackend = $injector.get('$httpBackend');
         rest = restServiceHandler;
         usecaseAdapter = usecaseAdapterFactory;
-        usecaseAdapter.andReturn(presenter);
+        usecaseAdapter.and.returnValue(presenter);
     }));
 
     afterEach(function () {
@@ -36,7 +36,7 @@ describe('checkpoint.oauth', function () {
             });
 
             it('passes scope to usecase adapter factory', function () {
-                expect(usecaseAdapter.calls[0].args[0]).toEqual(scope);
+                expect(usecaseAdapter.calls.first().args[0]).toEqual(scope);
             });
 
             it('params are set on presenter', function () {
@@ -44,7 +44,7 @@ describe('checkpoint.oauth', function () {
             });
 
             it('generated presenter is passed to rest service', function () {
-                expect(rest.calls[0].args[0]).toEqual(presenter);
+                expect(rest.calls.first().args[0]).toEqual(presenter);
             });
 
             describe('without configured baseUri', function () {
@@ -55,7 +55,7 @@ describe('checkpoint.oauth', function () {
 
             describe('with configured baseUri', function () {
                 beforeEach(function () {
-                    config.baseUri = 'baseUri/'
+                    config.baseUri = 'baseUri/';
                     scope.auth();
                 });
 
@@ -95,7 +95,7 @@ describe('checkpoint.oauth', function () {
                 });
 
                 it('passes scope to usecase adapter', function() {
-                    expect(usecaseAdapter.calls[0].args[0]).toEqual(scope);
+                    expect(usecaseAdapter.calls.first().args[0]).toEqual(scope);
                 });
 
                 it('params are set on presenter', function () {
@@ -103,7 +103,7 @@ describe('checkpoint.oauth', function () {
                 });
 
                 it('calls rest service for presenter', function() {
-                    expect(rest.calls[0].args[0]).toEqual(presenter);
+                    expect(rest.calls.first().args[0]).toEqual(presenter);
                 });
 
                 describe('with configured baseUri', function () {

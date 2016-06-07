@@ -108,7 +108,7 @@ describe('checkpoint accounts', function () {
         beforeEach(inject(function ($controller) {
             ctrl = $controller(RecoverPasswordController, {$scope: scope, config: config});
             presenter = {};
-            usecaseAdapter.andReturn(presenter);
+            usecaseAdapter.and.returnValue(presenter);
         }));
 
         [
@@ -139,7 +139,7 @@ describe('checkpoint accounts', function () {
                                     });
 
                                     it('creates presenter', function () {
-                                        expect(usecaseAdapter.calls[0].args[0]).toEqual(scope);
+                                        expect(usecaseAdapter.calls.first().args[0]).toEqual(scope);
                                     });
 
                                     it('sends PUT request', function () {
@@ -156,11 +156,11 @@ describe('checkpoint accounts', function () {
                                     });
 
                                     it('sends rest call', function () {
-                                        expect(rest.calls[0].args[0]).toEqual(presenter);
+                                        expect(rest.calls.first().args[0]).toEqual(presenter);
                                     });
 
                                     it('when rejected because email was empty', function () {
-                                        usecaseAdapter.calls[0].args[2].rejected({
+                                        usecaseAdapter.calls.first().args[2].rejected({
                                             email: ['required', 'email', 'mismatch']
                                         });
 
@@ -168,7 +168,7 @@ describe('checkpoint accounts', function () {
                                     });
 
                                     it('when rejected because email was invalid', function () {
-                                        usecaseAdapter.calls[0].args[2].rejected({
+                                        usecaseAdapter.calls.first().args[2].rejected({
                                             email: ['email', 'mismatch']
                                         });
 
@@ -176,7 +176,7 @@ describe('checkpoint accounts', function () {
                                     });
 
                                     it('when rejected because email was unknown', function () {
-                                        usecaseAdapter.calls[0].args[2].rejected({
+                                        usecaseAdapter.calls.first().args[2].rejected({
                                             email: ['mismatch']
                                         });
 
@@ -217,7 +217,7 @@ describe('checkpoint accounts', function () {
                 resetPasswordPresenter: resetPresenter
             });
             presenter = {};
-            usecaseAdapter.andReturn(presenter);
+            usecaseAdapter.and.returnValue(presenter);
         }));
 
         it('when username is not in query string', function () {
@@ -255,7 +255,7 @@ describe('checkpoint accounts', function () {
                                     });
 
                                     it('creates presenter', function () {
-                                        expect(usecaseAdapter.calls[0].args[0]).toEqual(scope);
+                                        expect(usecaseAdapter.calls.first().args[0]).toEqual(scope);
                                     });
 
                                     it('sends POST request', function () {
@@ -273,11 +273,11 @@ describe('checkpoint accounts', function () {
                                     });
 
                                     it('sends rest call', function () {
-                                        expect(rest.calls[0].args[0]).toEqual(presenter);
+                                        expect(rest.calls.first().args[0]).toEqual(presenter);
                                     });
 
                                     it('when rejected because password was empy', function () {
-                                        usecaseAdapter.calls[0].args[2].rejected({
+                                        usecaseAdapter.calls.first().args[2].rejected({
                                             password: ['required']
                                         });
 
@@ -285,7 +285,7 @@ describe('checkpoint accounts', function () {
                                     });
 
                                     it('when rejected because no token is given', function () {
-                                        usecaseAdapter.calls[0].args[2].rejected({
+                                        usecaseAdapter.calls.first().args[2].rejected({
                                             token: ['required']
                                         });
 
@@ -293,7 +293,7 @@ describe('checkpoint accounts', function () {
                                     });
 
                                     it('when rejected because token is invalid', function () {
-                                        usecaseAdapter.calls[0].args[2].rejected({
+                                        usecaseAdapter.calls.first().args[2].rejected({
                                             token: ['mismatch']
                                         });
 
