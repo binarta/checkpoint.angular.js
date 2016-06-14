@@ -6,6 +6,7 @@
     "./src/main/js/checkpoint-tpls-bootstrap3.js",
     "./less/checkpoint.less",
     "./metadata-system.json",
+    "./mail/PasswordRecoveryMail.template.mail",
     "./sources.json"
   ],
   "dependencies": {
