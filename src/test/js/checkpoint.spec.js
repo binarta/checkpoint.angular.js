@@ -10,6 +10,7 @@ describe('checkpoint', function () {
     var password = '1234';
     var rememberMe = true;
 
+    beforeEach(module('binartajs-angular1-spec'));
     beforeEach(module('checkpoint'));
     beforeEach(module('rest.client'));
     beforeEach(module('notifications'));
@@ -75,13 +76,13 @@ describe('checkpoint', function () {
             service = signinService;
         }));
 
-        describe('on execute', function() {
+        describe('on execute', function () {
             var successCallbackExecuted = false;
-            var success = function() {
+            var success = function () {
                 successCallbackExecuted = true;
             };
 
-            beforeEach(function() {
+            beforeEach(function () {
                 service({
                     $scope: scope,
                     request: {
@@ -89,7 +90,7 @@ describe('checkpoint', function () {
                         password: password,
                         rememberMe: rememberMe
                     },
-                    success:success
+                    success: success
                 });
             });
 
@@ -254,7 +255,7 @@ describe('checkpoint', function () {
         });
 
         describe('when already signed in', function () {
-            beforeEach(function() {
+            beforeEach(function () {
                 location.path('/path');
                 $httpBackend.expect('GET', /.*/).respond({principal: 'principal'});
                 ctrl = $controller(SigninController, {$scope: scope});
@@ -310,64 +311,58 @@ describe('checkpoint', function () {
         });
 
 
-        describe('get metadata', function () {
-            var validData = {principal: 'foo'},
+        fdescribe('get metadata', function () {
+            var validData = {billing: {complete: false}},
                 invalidData = {principal: null},
                 result;
 
-            function callGetMetadata(data) {
-                $httpBackend.expect('GET', 'base/api/account/metadata', null, function(headers) {
-                    return headers['X-Namespace'] == config.namespace;
-                }).respond(data);
+            function callGetMetadata() {
                 account.getMetadata().then(function (metadata) {
                     result = metadata;
                 });
-                $httpBackend.flush();
+                rootScope.$digest();
             }
 
-            it('when metadata is invalid', function () {
-                callGetMetadata(invalidData);
-
-                expect(result).toBeUndefined();
-            });
-
             it('first getMetadata call', function () {
-                callGetMetadata(validData);
+                callGetMetadata();
 
                 expect(result).toEqual(validData);
             });
 
             it('second getMetadata call will return a cached promise using memoization', function () {
-                callGetMetadata(validData);
+                callGetMetadata();
                 result = undefined;
-                account.getMetadata().then(function (metadata) {
-                    result = metadata;
-                });
-                rootScope.$apply();
+                callGetMetadata();
 
                 expect(result).toEqual(validData);
             });
 
             it('on signin should remove cached promise', function () {
-                callGetMetadata(validData);
+                // TODO - this test appears to reflect the need to detect when a user is authenticated or not.
+                // TODO - over time replace the need for this by depending on profile.isAuthenticated() instead.
+                callGetMetadata();
                 topics['checkpoint.signin']('ok');
-
-                callGetMetadata(validData);
+                callGetMetadata();
+                expect(result).toEqual(validData);
             });
 
 
             it('on signout should remove cached promise', function () {
-                callGetMetadata(validData);
+                // TODO - this test appears to reflect the need to detect when a user is authenticated or not.
+                // TODO - over time replace the need for this by depending on profile.isAuthenticated() instead.
+                callGetMetadata();
                 topics['checkpoint.signout']('ok');
-
-                callGetMetadata(validData);
+                callGetMetadata();
+                expect(result).toEqual(validData);
             });
 
             it('on auth.required should remove cached promise', function () {
-                callGetMetadata(validData);
+                // TODO - this test appears to reflect the need to detect when a user is authenticated or not.
+                // TODO - over time replace the need for this by depending on profile.isAuthenticated() instead.
+                callGetMetadata();
                 topics['checkpoint.auth.required']();
-
-                callGetMetadata(validData);
+                callGetMetadata();
+                expect(result).toEqual(validData);
             });
         });
 
@@ -378,7 +373,12 @@ describe('checkpoint', function () {
 
             function callGetPermissions() {
                 $httpBackend.expect('GET', 'base/api/account/metadata').respond(metadata);
-                $httpBackend.expect('POST', 'base/api/query/permission/list', {filter: {namespace: config.namespace, owner: 'foo'}}).respond(permissions);
+                $httpBackend.expect('POST', 'base/api/query/permission/list', {
+                    filter: {
+                        namespace: config.namespace,
+                        owner: 'foo'
+                    }
+                }).respond(permissions);
                 account.getPermissions().then(function (permissions) {
                     result = permissions;
                 });
@@ -421,7 +421,7 @@ describe('checkpoint', function () {
                 callGetPermissions();
             });
         });
-        
+
         describe('has permission', function () {
             var metadata = {principal: 'foo'},
                 permissions = [
@@ -436,7 +436,12 @@ describe('checkpoint', function () {
 
             it('when permitted', function () {
                 var permitted;
-                $httpBackend.expect('POST', 'base/api/query/permission/list', {filter: {namespace: config.namespace, owner: 'foo'}}).respond(permissions);
+                $httpBackend.expect('POST', 'base/api/query/permission/list', {
+                    filter: {
+                        namespace: config.namespace,
+                        owner: 'foo'
+                    }
+                }).respond(permissions);
                 account.hasPermission('permission').then(function (p) {
                     permitted = p;
                 });
@@ -447,7 +452,12 @@ describe('checkpoint', function () {
 
             it('when not permitted', function () {
                 var permitted;
-                $httpBackend.expect('POST', 'base/api/query/permission/list', {filter: {namespace: config.namespace, owner: 'foo'}}).respond(permissions);
+                $httpBackend.expect('POST', 'base/api/query/permission/list', {
+                    filter: {
+                        namespace: config.namespace,
+                        owner: 'foo'
+                    }
+                }).respond(permissions);
                 account.hasPermission('not').then(function (p) {
                     permitted = p;
                 });
@@ -458,7 +468,12 @@ describe('checkpoint', function () {
 
             it('getPermissions call failed', function () {
                 var permitted;
-                $httpBackend.expect('POST', 'base/api/query/permission/list', {filter: {namespace: config.namespace, owner: 'foo'}}).respond(404);
+                $httpBackend.expect('POST', 'base/api/query/permission/list', {
+                    filter: {
+                        namespace: config.namespace,
+                        owner: 'foo'
+                    }
+                }).respond(404);
                 account.hasPermission('permission').then(function (p) {
                     permitted = p;
                 });
@@ -538,7 +553,8 @@ describe('checkpoint', function () {
                 $httpBackend.flush();
             });
 
-            it('do not throw error', function () {});
+            it('do not throw error', function () {
+            });
         });
 
         describe('when authenticated', function () {
@@ -571,7 +587,8 @@ describe('checkpoint', function () {
                 $httpBackend.flush();
             });
 
-            it('do not throw error', function () {});
+            it('do not throw error', function () {
+            });
         });
 
         describe('and response.scope is given', function () {
@@ -624,7 +641,8 @@ describe('checkpoint', function () {
                         topics['checkpoint.signout']('ok');
                     });
 
-                    it('do not throw error', function () {});
+                    it('do not throw error', function () {
+                    });
 
                     describe('and checkpoint.signin event raised', function () {
                         beforeEach(function () {
@@ -632,7 +650,8 @@ describe('checkpoint', function () {
                             rootScope.$apply();
                         });
 
-                        it('do not throw error', function () {});
+                        it('do not throw error', function () {
+                        });
                     });
                 });
             });
@@ -1054,177 +1073,177 @@ describe('checkpoint', function () {
             'scope',
             'controller'
         ].forEach(function (context) {
-                describe('with ' + context, function () {
-                    var ctx;
+            describe('with ' + context, function () {
+                var ctx;
+                beforeEach(function () {
+                    if (context == 'scope') ctx = scope;
+                    if (context == 'controller') ctx = ctrl;
+                });
+
+                describe('with invalid data', function () {
                     beforeEach(function () {
-                        if (context == 'scope') ctx = scope;
-                        if (context == 'controller') ctx = ctrl;
+                        scope.registrationForm = {
+                            $invalid: true,
+                            email: {
+                                $invalid: true
+                            },
+                            password: {
+                                $invalid: true
+                            },
+                            vat: {
+                                $invalid: true
+                            }
+                        };
+
+                        ctx.register();
                     });
 
-                    describe('with invalid data', function () {
-                        beforeEach(function () {
-                            scope.registrationForm = {
-                                $invalid: true,
-                                email: {
-                                    $invalid: true
-                                },
-                                password: {
-                                    $invalid: true
-                                },
-                                vat: {
-                                    $invalid: true
-                                }
-                            };
-
-                            ctx.register();
-                        });
-
-                        it('put violations on scope', function () {
-                            expect(scope.violations).toEqual({
-                                email: ['required'],
-                                password: ['required'],
-                                vat: ['required']
-                            })
-                        });
-
-                        it('rest service not called yet', function () {
-                            expect(rest).not.toHaveBeenCalled();
-                        });
+                    it('put violations on scope', function () {
+                        expect(scope.violations).toEqual({
+                            email: ['required'],
+                            password: ['required'],
+                            vat: ['required']
+                        })
                     });
 
-                    describe('with all data', function () {
+                    it('rest service not called yet', function () {
+                        expect(rest).not.toHaveBeenCalled();
+                    });
+                });
+
+                describe('with all data', function () {
+                    beforeEach(function () {
+                        ctx.username = 'username';
+                        ctx.email = 'email';
+                        ctx.password = 'password';
+                        ctx.vat = 'vat';
+                        ctx.register();
+                    });
+
+                    it('puts scope on presenter', function () {
+                        expect(usecaseAdapter.calls.first().args[0]).toEqual(scope);
+                    });
+
+                    it('populates params on presenter', function () {
+                        expect(presenter.params.method).toEqual('PUT');
+                        expect(presenter.params.url).toEqual('api/accounts');
+                        expect(presenter.params.data.namespace).toEqual(config.namespace);
+                        expect(presenter.params.data.username).toEqual(ctx.username);
+                        expect(presenter.params.data.email).toEqual(ctx.email);
+                        expect(presenter.params.data.alias).toEqual(ctx.username);
+                        expect(presenter.params.data.password).toEqual(ctx.password);
+                        expect(presenter.params.data.vat).toEqual(ctx.vat);
+                    });
+
+                    it('populates params on presenter with base uri', function () {
+                        config.baseUri = 'baseUri/';
+                        ctx.register();
+                        expect(presenter.params.method).toEqual('PUT');
+                        expect(presenter.params.url).toEqual('baseUri/api/accounts');
+                        expect(presenter.params.data.namespace).toEqual(config.namespace);
+                        expect(presenter.params.data.username).toEqual(ctx.username);
+                        expect(presenter.params.data.email).toEqual(ctx.email);
+                        expect(presenter.params.data.alias).toEqual(ctx.username);
+                        expect(presenter.params.data.password).toEqual(ctx.password);
+                        expect(presenter.params.data.vat).toEqual(ctx.vat);
+                    });
+
+                    it('populates params on presenter based on registered mappers', inject(function (registrationRequestMessageMapperRegistry) {
+                        registrationRequestMessageMapperRegistry.add(function (scope) {
+                            return function (it) {
+                                it.customField = scope.customField;
+                                return it;
+                            }
+                        });
+                        ctx.customField = '1234';
+                        ctx.register();
+                        expect(presenter.params.data.customField).toEqual('1234');
+                    }));
+
+                    it('calls rest service', function () {
+                        expect(rest.calls.first().args[0]).toEqual(presenter);
+                    });
+
+                    describe('given registration success', function () {
                         beforeEach(function () {
-                            ctx.username = 'username';
-                            ctx.email = 'email';
-                            ctx.password = 'password';
-                            ctx.vat = 'vat';
-                            ctx.register();
+                            usecaseAdapter.calls.first().args[1]();
                         });
 
-                        it('puts scope on presenter', function () {
-                            expect(usecaseAdapter.calls.first().args[0]).toEqual(scope);
-                        });
-
-                        it('populates params on presenter', function () {
-                            expect(presenter.params.method).toEqual('PUT');
-                            expect(presenter.params.url).toEqual('api/accounts');
-                            expect(presenter.params.data.namespace).toEqual(config.namespace);
-                            expect(presenter.params.data.username).toEqual(ctx.username);
-                            expect(presenter.params.data.email).toEqual(ctx.email);
-                            expect(presenter.params.data.alias).toEqual(ctx.username);
-                            expect(presenter.params.data.password).toEqual(ctx.password);
-                            expect(presenter.params.data.vat).toEqual(ctx.vat);
-                        });
-
-                        it('populates params on presenter with base uri', function () {
-                            config.baseUri = 'baseUri/';
-                            ctx.register();
-                            expect(presenter.params.method).toEqual('PUT');
-                            expect(presenter.params.url).toEqual('baseUri/api/accounts');
-                            expect(presenter.params.data.namespace).toEqual(config.namespace);
-                            expect(presenter.params.data.username).toEqual(ctx.username);
-                            expect(presenter.params.data.email).toEqual(ctx.email);
-                            expect(presenter.params.data.alias).toEqual(ctx.username);
-                            expect(presenter.params.data.password).toEqual(ctx.password);
-                            expect(presenter.params.data.vat).toEqual(ctx.vat);
-                        });
-
-                        it('populates params on presenter based on registered mappers', inject(function (registrationRequestMessageMapperRegistry) {
-                            registrationRequestMessageMapperRegistry.add(function (scope) {
-                                return function (it) {
-                                    it.customField = scope.customField;
-                                    return it;
-                                }
+                        it('raises system.success notification', function () {
+                            expect(dispatcher['system.success']).toEqual({
+                                code: 'checkpoint.registration.completed',
+                                default: 'Congratulations, your account has been created.'
                             });
-                            ctx.customField = '1234';
-                            ctx.register();
-                            expect(presenter.params.data.customField).toEqual('1234');
-                        }));
-
-                        it('calls rest service', function () {
-                            expect(rest.calls.first().args[0]).toEqual(presenter);
                         });
 
-                        describe('given registration success', function () {
-                            beforeEach(function () {
-                                usecaseAdapter.calls.first().args[1]();
+                        it('signin the new user', function () {
+                            expect(rest.calls.first().args[0].params.method).toEqual('POST');
+                            expect(rest.calls.first().args[0].params.url).toEqual('api/checkpoint');
+                            expect(rest.calls.first().args[0].params.data).toEqual({
+                                username: ctx.email,
+                                password: ctx.password,
+                                rememberMe: false,
+                                namespace: config.namespace
                             });
+                            expect(rest.calls.first().args[0].params.withCredentials).toEqual(true);
+                        });
 
-                            it('raises system.success notification', function () {
-                                expect(dispatcher['system.success']).toEqual({
-                                    code: 'checkpoint.registration.completed',
-                                    default: 'Congratulations, your account has been created.'
+                        describe('on signin success', function () {
+                            describe('and no success target defined', function () {
+                                beforeEach(function () {
+                                    usecaseAdapter.calls.mostRecent().args[1]();
+                                });
+
+                                it('redirect to homepage', function () {
+                                    expect(location.path()).toEqual('/');
                                 });
                             });
 
-                            it('signin the new user', function () {
-                                expect(rest.calls.first().args[0].params.method).toEqual('POST');
-                                expect(rest.calls.first().args[0].params.url).toEqual('api/checkpoint');
-                                expect(rest.calls.first().args[0].params.data).toEqual({
-                                    username: ctx.email,
-                                    password: ctx.password,
-                                    rememberMe: false,
-                                    namespace: config.namespace
-                                });
-                                expect(rest.calls.first().args[0].params.withCredentials).toEqual(true);
-                            });
-
-                            describe('on signin success', function () {
-                                describe('and no success target defined', function () {
-                                    beforeEach(function () {
-                                        usecaseAdapter.calls.mostRecent().args[1]();
-                                    });
-
-                                    it('redirect to homepage', function () {
-                                        expect(location.path()).toEqual('/');
-                                    });
+                            describe('and success target is defined', function () {
+                                beforeEach(function () {
+                                    config.onSigninSuccessTarget = '/target/';
+                                    usecaseAdapter.calls.mostRecent().args[1]();
                                 });
 
-                                describe('and success target is defined', function () {
-                                    beforeEach(function () {
-                                        config.onSigninSuccessTarget = '/target/';
-                                        usecaseAdapter.calls.mostRecent().args[1]();
-                                    });
-
-                                    it('redirect to target', function () {
-                                        expect(location.path()).toEqual('/target/');
-                                    });
-
-                                    it('reset target config', function () {
-                                        expect(config.onSigninSuccessTarget).toBeUndefined();
-                                    });
+                                it('redirect to target', function () {
+                                    expect(location.path()).toEqual('/target/');
                                 });
-                            });
-                        });
 
-                        describe('given registration rejected', function () {
-                            beforeEach(function () {
-                                usecaseAdapter.calls.first().args[2].rejected();
-                            });
-
-                            it('raises checkpoint.registration.rejected notification', function () {
-                                expect(dispatcher['checkpoint.registration.rejected']).toEqual('rejected');
+                                it('reset target config', function () {
+                                    expect(config.onSigninSuccessTarget).toBeUndefined();
+                                });
                             });
                         });
                     });
 
-                    describe('with only required data', function () {
+                    describe('given registration rejected', function () {
                         beforeEach(function () {
-                            ctx.email = 'email';
-                            ctx.password = 'password';
-                            ctx.register();
+                            usecaseAdapter.calls.first().args[2].rejected();
                         });
 
-                        it('populates params on presenter', function () {
-                            expect(presenter.params.data.username).toEqual('email');
-                            expect(presenter.params.data.email).toEqual('email');
-                            expect(presenter.params.data.alias).toEqual('email');
-                            expect(presenter.params.data.password).toEqual('password');
-                            expect(presenter.params.data.vat).toBeUndefined();
+                        it('raises checkpoint.registration.rejected notification', function () {
+                            expect(dispatcher['checkpoint.registration.rejected']).toEqual('rejected');
                         });
                     });
                 });
+
+                describe('with only required data', function () {
+                    beforeEach(function () {
+                        ctx.email = 'email';
+                        ctx.password = 'password';
+                        ctx.register();
+                    });
+
+                    it('populates params on presenter', function () {
+                        expect(presenter.params.data.username).toEqual('email');
+                        expect(presenter.params.data.email).toEqual('email');
+                        expect(presenter.params.data.alias).toEqual('email');
+                        expect(presenter.params.data.password).toEqual('password');
+                        expect(presenter.params.data.vat).toBeUndefined();
+                    });
+                });
             });
+        });
     });
 
     describe('login modal directive', function () {
@@ -1314,83 +1333,83 @@ describe('checkpoint', function () {
         });
     });
 
-    describe('signInWithTokenService', function() {
+    describe('signInWithTokenService', function () {
         var service;
 
-        beforeEach(inject(function(signInWithTokenService, _signinService_, $location) {
+        beforeEach(inject(function (signInWithTokenService, _signinService_, $location) {
             service = signInWithTokenService;
             spyOn($location, 'replace');
         }));
 
-        describe('with a token in the url', function() {
-            beforeEach(inject(function($location, $rootScope) {
+        describe('with a token in the url', function () {
+            beforeEach(inject(function ($location, $rootScope) {
                 $location.search('autoSigninToken', 'T');
             }));
 
-            describe('and we attempt to sign in', function() {
-                beforeEach(function() {
+            describe('and we attempt to sign in', function () {
+                beforeEach(function () {
                     service()
                 });
 
-                it('then signin service is used for provided token', function() {
+                it('then signin service is used for provided token', function () {
                     expect(rest.calls.first().args[0].params.data.token).toEqual('T');
                     expect(rest.calls.first().args[0].params.data.username).toBeUndefined();
                     expect(rest.calls.first().args[0].params.data.password).toBeUndefined();
                 });
 
-                describe('and we are signed in with success', function() {
-                    beforeEach(function() {
+                describe('and we are signed in with success', function () {
+                    beforeEach(function () {
                         usecaseAdapter.calls.first().args[1]();
                     });
 
-                    it('then token is removed from location', inject(function($location) {
+                    it('then token is removed from location', inject(function ($location) {
                         expect($location.search().autoSigninToken).toBeUndefined();
                     }));
 
-                    it('and the history state record was replaced', inject(function($location) {
+                    it('and the history state record was replaced', inject(function ($location) {
                         expect($location.replace).toHaveBeenCalled();
                     }));
                 });
             });
 
-            describe('and we attempt to sign in for a given token', function() {
-                beforeEach(function() {
-                    service({token:'AT'})
+            describe('and we attempt to sign in for a given token', function () {
+                beforeEach(function () {
+                    service({token: 'AT'})
                 });
 
-                it('then the signin request is sent for the given token', function() {
+                it('then the signin request is sent for the given token', function () {
                     expect(rest.calls.first().args[0].params.data.token).toEqual('AT');
                 });
 
-                describe('and we are signed in with success', function() {
-                    beforeEach(inject(function($rootScope) {
+                describe('and we are signed in with success', function () {
+                    beforeEach(inject(function ($rootScope) {
                         usecaseAdapter.calls.first().args[1]();
                     }));
 
-                    it('then token is removed from location', inject(function($location) {
+                    it('then token is removed from location', inject(function ($location) {
                         expect($location.search().token).toBeUndefined();
                     }));
                 });
             });
         });
 
-        describe('without a token in the url', function() {
-            describe('and we attempt to sign in', function() {
-                beforeEach(function() {
+        describe('without a token in the url', function () {
+            describe('and we attempt to sign in', function () {
+                beforeEach(function () {
                     service()
                 });
 
-                it('no signin attempt was made', function() {
+                it('no signin attempt was made', function () {
                     expect(rest.calls.first()).toBeUndefined();
                 })
             });
 
-            describe('and we attempt to sign in for a provided token', function() {
-                beforeEach(function() {
-                    service({token:'AT'})
+            describe('and we attempt to sign in for a provided token', function () {
+                beforeEach(function () {
+                    service({token: 'AT'})
                 });
 
-                it('then a signin attempt for the given token was made', function() {
+                it('then a signin attempt for the given token was made', function () {
                     expect(rest.calls.first().args[0].params.data.token).toEqual('AT');
                 })
             });

@@ -1,5 +1,5 @@
-angular.module('checkpoint', ['ngRoute', 'config', 'notifications', 'angular.usecase.adapter', 'rest.client', 'ui.bootstrap.modal'])
-    .service('account', ['$http', '$q', 'config', 'topicRegistry', 'authRequiredPresenter', AccountService])
+angular.module('checkpoint', ['ngRoute', 'config', 'notifications', 'angular.usecase.adapter', 'rest.client', 'ui.bootstrap.modal', 'binarta-checkpointjs-angular1'])
+    .service('account', ['binarta', '$http', '$q', 'config', 'topicRegistry', 'authRequiredPresenter', AccountService])
     .factory('fetchAccountMetadata', ['account', 'ngRegisterTopicHandler', FetchAccountMetadata])
     .factory('activeUserHasPermission', ['account', 'ngRegisterTopicHandler', ActiveUserHasPermission])
     .factory('registrationRequestMessageMapper', ['config', 'registrationRequestMessageMapperRegistry', RegistrationRequestMessageMapperFactory])
@@ -128,7 +128,7 @@ function SigninController($scope, $location, config, signinService, account) {
     });
 }
 
-function AccountService($http, $q, config, topicRegistry, authRequiredPresenter) {
+function AccountService(binarta, $http, $q, config, topicRegistry, authRequiredPresenter) {
     var metadataPromise, permissionPromise;
 
     function resetPromises() {
@@ -147,14 +147,12 @@ function AccountService($http, $q, config, topicRegistry, authRequiredPresenter)
 
     function getMetadata() {
         if(angular.isUndefined(metadataPromise)) {
-            metadataPromise = $http.get(config.baseUri + 'api/account/metadata', {
-                withCredentials: true,
-                headers: {
-                    'X-Namespace': config.namespace
+            var d = $q.defer();
+            metadataPromise = d.promise;
+            binarta.checkpoint.profile.refresh({
+                success:function() {
+                    d.resolve(binarta.checkpoint.profile.metadata());
                 }
-            }).then(function (metadata) {
-                if (!metadata.data.principal) return $q.reject();
-                return metadata.data;
             });
         }
         return metadataPromise;
