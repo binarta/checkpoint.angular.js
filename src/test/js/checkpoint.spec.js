@@ -1,6 +1,7 @@
 describe('checkpoint', function () {
     var self = this;
-    var ctrl, $rootScope, scope, $httpBackend, location, dispatcher, registry, config;
+    var $controller, jQuerySelector, jQueryTriggeredEvent;
+    var binarta, ctrl, $rootScope, scope, $httpBackend, location, dispatcher, registry, config;
     var payload = {};
     var usecaseAdapter;
     var rest;
@@ -15,7 +16,8 @@ describe('checkpoint', function () {
     beforeEach(module('rest.client'));
     beforeEach(module('notifications'));
     beforeEach(module('angular.usecase.adapter'));
-    beforeEach(inject(function (_$rootScope_, $injector, $location, topicMessageDispatcherMock, topicRegistryMock, usecaseAdapterFactory, restServiceHandler) {
+    beforeEach(inject(function (_binarta_, binartaCheckpointGateway, _$rootScope_, $injector, $location, topicMessageDispatcherMock, topicRegistryMock, usecaseAdapterFactory, restServiceHandler) {
+        binarta = _binarta_;
         $rootScope = _$rootScope_;
         scope = $rootScope.$new();
         config = $injector.get('config');
@@ -27,7 +29,21 @@ describe('checkpoint', function () {
         rest = restServiceHandler;
         presenter = {};
         usecaseAdapter.and.returnValue(presenter);
+
+        jQuerySelector = undefined;
+        jQueryTriggeredEvent = undefined;
+        $ = function (selector) {
+            jQuerySelector = selector;
+            return {
+                trigger: function (event) {
+                    jQueryTriggeredEvent = event;
+                }
+            }
+        };
+
+        binartaCheckpointGateway.signout();
     }));
+
     afterEach(function () {
         $httpBackend.verifyNoOutstandingExpectation();
         $httpBackend.verifyNoOutstandingRequest();
@@ -72,8 +88,9 @@ describe('checkpoint', function () {
         var service;
 
         beforeEach(inject(function (config, signinService) {
-            config.namespace = 'namespace';
             service = signinService;
+            binarta.checkpoint.registrationForm.submit({username: username, password: password});
+            binarta.checkpoint.profile.signout();
         }));
 
         describe('on execute', function () {
@@ -94,20 +111,7 @@ describe('checkpoint', function () {
                 });
             });
 
-            it('send post request', function () {
-                expect(rest.calls.first().args[0].params.method).toEqual('POST');
-                expect(rest.calls.first().args[0].params.url).toEqual('api/checkpoint');
-                expect(rest.calls.first().args[0].params.data).toEqual({
-                    username: username,
-                    password: password,
-                    rememberMe: rememberMe,
-                    namespace: 'namespace'
-                });
-                expect(rest.calls.first().args[0].params.withCredentials).toEqual(true);
-            });
-
             it('success', function () {
-                usecaseAdapter.calls.first().args[1]();
                 expect(dispatcher['checkpoint.signin']).toEqual('ok');
                 expect(successCallbackExecuted).toEqual(true);
             });
@@ -115,32 +119,19 @@ describe('checkpoint', function () {
     });
 
     describe('SigninController', function () {
-        var $controller, jQuerySelector, jQueryTriggeredEvent;
-
         beforeEach(inject(function (_$controller_, config) {
+            binarta.checkpoint.profile.signout();
             $controller = _$controller_;
             config.namespace = 'namespace';
             config.redirectUri = 'redirect';
-
-            jQuerySelector = undefined;
-            jQueryTriggeredEvent = undefined;
-            $ = function (selector) {
-                jQuerySelector = selector;
-                return {
-                    trigger: function (event) {
-                        jQueryTriggeredEvent = event;
-                    }
-                }
-            }
         }));
 
         describe('when unauthenticated', function () {
             describe('when username is in search part of url', function () {
                 beforeEach(inject(function ($location, $controller) {
                     $location.search('username', username);
-                    $httpBackend.expect('GET', /.*/).respond(401);
                     ctrl = $controller(SigninController, {$scope: scope});
-                    $httpBackend.flush();
+                    $rootScope.$digest();
                 }));
 
                 it('username is on scope and ctrl', function () {
@@ -151,9 +142,8 @@ describe('checkpoint', function () {
 
             describe('no params in search part of url', function () {
                 beforeEach(function () {
-                    $httpBackend.expect('GET', /.*/).respond(401);
                     ctrl = $controller(SigninController, {$scope: scope});
-                    $httpBackend.flush();
+                    $rootScope.$digest();
                 });
 
                 it('username is not on scope and ctrl', function () {
@@ -167,7 +157,9 @@ describe('checkpoint', function () {
                 ].forEach(function (context) {
                     describe('with ' + context, function () {
                         var ctx;
+
                         beforeEach(function () {
+                            console.log('context: ' + context);
                             if (context == 'scope') ctx = scope;
                             if (context == 'controller') ctx = ctrl;
                         });
@@ -179,33 +171,24 @@ describe('checkpoint', function () {
                             expect(jQueryTriggeredEvent).toEqual('change');
                         });
 
-                        it('on submit send post request', function () {
+                        function triggerSuccess(onSuccess) {
+                            binarta.checkpoint.registrationForm.submit({username: username, password: password});
+                            binarta.checkpoint.profile.signout();
                             ctx.username = username;
                             ctx.password = password;
-                            ctx.rememberMe = rememberMe;
-                            ctx.submit();
-
-                            expect(rest.calls.first().args[0].params.method).toEqual('POST');
-                            expect(rest.calls.first().args[0].params.url).toEqual('api/checkpoint');
-                            expect(rest.calls.first().args[0].params.data).toEqual({
-                                username: username,
-                                password: password,
-                                rememberMe: rememberMe,
-                                namespace: 'namespace'
-                            });
-                            expect(rest.calls.first().args[0].params.withCredentials).toEqual(true);
-                        });
-
-                        function triggerSuccess(status, data, onSuccess) {
                             ctx.submit({success: onSuccess});
-                            if (status != 412)
-                                usecaseAdapter.calls.first().args[1]();
-                            else
-                                usecaseAdapter.calls.first().args[2].rejected(data);
+                            $rootScope.$digest();
+                        }
+
+                        function triggerValidationError() {
+                            ctx.username = '-';
+                            ctx.password = '-';
+                            ctx.submit();
+                            $rootScope.$digest();
                         }
 
                         it('on submit success', function () {
-                            triggerSuccess(200);
+                            triggerSuccess();
 
                             expect(location.path()).toEqual('/redirect');
                             expect(dispatcher['checkpoint.signin']).toEqual('ok');
@@ -213,7 +196,7 @@ describe('checkpoint', function () {
 
                         it('on submit success with extra success callback', function () {
                             var onSuccessExecuted;
-                            triggerSuccess(200, null, function () {
+                            triggerSuccess(function () {
                                 onSuccessExecuted = true;
                             });
 
@@ -226,7 +209,7 @@ describe('checkpoint', function () {
                             });
 
                             it('on submit success', function () {
-                                triggerSuccess(200);
+                                triggerSuccess();
 
                                 expect(location.path()).toEqual('/success/target');
                                 expect(config.onSigninSuccessTarget).toBeUndefined();
@@ -238,15 +221,15 @@ describe('checkpoint', function () {
                             location.path('/noredirect');
                             ctx.init({noredirect: true});
 
-                            triggerSuccess(200);
+                            triggerSuccess();
 
                             expect(location.path()).toEqual('/noredirect');
                         });
 
                         it('expose rejection status', function () {
-                            expect(scope.rejected()).toBeUndefined();
-                            triggerSuccess(412, {});
-                            expect(scope.rejected()).toEqual(true);
+                            expect(scope.rejected()).toBeFalsy();
+                            triggerValidationError();
+                            expect(scope.rejected()).toBeTruthy();
                             expect(ctx.violation).toEqual('credentials.mismatch');
                         });
                     });
@@ -256,31 +239,15 @@ describe('checkpoint', function () {
 
         describe('when already signed in', function () {
             beforeEach(function () {
+                binarta.checkpoint.registrationForm.submit({username: 'u', password: 'p'});
                 location.path('/path');
-                $httpBackend.expect('GET', /.*/).respond({principal: 'principal'});
                 ctrl = $controller(SigninController, {$scope: scope});
-                $httpBackend.flush();
+                $rootScope.$digest();
             });
 
             it('should redirect to homepage', function () {
                 expect(location.path()).toEqual('/');
             });
-        });
-    });
-
-    describe('SigninController with baseUri', function () {
-        var baseUri = 'baseUri';
-
-        beforeEach(inject(function ($controller, config) {
-            config.baseUri = baseUri;
-            $httpBackend.expect('GET', /.*/).respond(401);
-            ctrl = $controller(SigninController, {$scope: scope});
-            $httpBackend.flush();
-        }));
-
-        it('on submit send post request', function () {
-            scope.submit();
-            expect(rest.calls.first().args[0].params.url).toEqual(baseUri + 'api/checkpoint');
         });
     });
 
@@ -310,73 +277,93 @@ describe('checkpoint', function () {
             });
         });
 
-
-        fdescribe('get metadata', function () {
+        describe('get metadata', function () {
             var validData = {billing: {complete: false}},
-                invalidData = {principal: null},
-                result;
+                result, metadataAvailable;
 
             function callGetMetadata() {
                 account.getMetadata().then(function (metadata) {
+                    metadataAvailable = true;
                     result = metadata;
+                }, function () {
+                    metadataAvailable = false;
+                    result = undefined;
                 });
                 rootScope.$digest();
             }
 
-            it('first getMetadata call', function () {
-                callGetMetadata();
+            describe('when signed out', function () {
+                beforeEach(function () {
+                    callGetMetadata();
+                });
 
-                expect(result).toEqual(validData);
+                it('then metadata is not available', function () {
+                    expect(metadataAvailable).toBeFalsy();
+                    expect(result).toBeUndefined();
+                });
+
+                it('on signin event then metadata is available', function () {
+                    binarta.checkpoint.registrationForm.submit({username: 'u', password: 'p'});
+                    topics['checkpoint.signin']('ok');
+                    callGetMetadata();
+                    expect(result.username).toEqual('u');
+                });
             });
 
-            it('second getMetadata call will return a cached promise using memoization', function () {
-                callGetMetadata();
-                result = undefined;
-                callGetMetadata();
+            describe('when signed in', function () {
+                beforeEach(function () {
+                    binarta.checkpoint.registrationForm.submit({username: 'u', password: 'p'});
+                });
 
-                expect(result).toEqual(validData);
-            });
+                it('then metadata is available', function () {
+                    callGetMetadata();
+                    expect(result.username).toEqual('u');
+                });
 
-            it('on signin should remove cached promise', function () {
-                // TODO - this test appears to reflect the need to detect when a user is authenticated or not.
-                // TODO - over time replace the need for this by depending on profile.isAuthenticated() instead.
-                callGetMetadata();
-                topics['checkpoint.signin']('ok');
-                callGetMetadata();
-                expect(result).toEqual(validData);
-            });
+                it('then metadata can be resolved multiple times', function () {
+                    callGetMetadata();
+                    callGetMetadata();
+                    expect(result.username).toEqual('u');
+                });
 
+                describe('when signed out', function () {
+                    beforeEach(inject(function (binartaCheckpointGateway) {
+                        binartaCheckpointGateway.signout();
+                    }));
 
-            it('on signout should remove cached promise', function () {
-                // TODO - this test appears to reflect the need to detect when a user is authenticated or not.
-                // TODO - over time replace the need for this by depending on profile.isAuthenticated() instead.
-                callGetMetadata();
-                topics['checkpoint.signout']('ok');
-                callGetMetadata();
-                expect(result).toEqual(validData);
-            });
+                    it('then after refresh caches then metadata is not available', inject(function () {
+                        account.refreshCaches();
+                        callGetMetadata();
+                        expect(metadataAvailable).toBeFalsy();
+                        expect(result).toBeUndefined();
+                    }));
 
-            it('on auth.required should remove cached promise', function () {
-                // TODO - this test appears to reflect the need to detect when a user is authenticated or not.
-                // TODO - over time replace the need for this by depending on profile.isAuthenticated() instead.
-                callGetMetadata();
-                topics['checkpoint.auth.required']();
-                callGetMetadata();
-                expect(result).toEqual(validData);
+                    it('on signout event then metadata is not available', function () {
+                        topics['checkpoint.signout']('ok');
+                        callGetMetadata();
+                        expect(metadataAvailable).toBeFalsy();
+                        expect(result).toBeUndefined();
+                    });
+
+                    it('on auth.required event then metadata is not available', function () {
+                        topics['checkpoint.auth.required']();
+                        callGetMetadata();
+                        expect(metadataAvailable).toBeFalsy();
+                        expect(result).toBeUndefined();
+                    });
+                });
             });
         });
 
         describe('get permissions', function () {
-            var metadata = {principal: 'foo'},
-                permissions = {permission: 'bar'},
+            var permissions = {permission: 'bar'},
                 result;
 
             function callGetPermissions() {
-                $httpBackend.expect('GET', 'base/api/account/metadata').respond(metadata);
                 $httpBackend.expect('POST', 'base/api/query/permission/list', {
                     filter: {
                         namespace: config.namespace,
-                        owner: 'foo'
+                        owner: 'principal(u)'
                     }
                 }).respond(permissions);
                 account.getPermissions().then(function (permissions) {
@@ -386,6 +373,8 @@ describe('checkpoint', function () {
             }
 
             beforeEach(function () {
+                binarta.checkpoint.registrationForm.submit({username: 'u', password: 'p'});
+                account.refreshCaches();
                 callGetPermissions();
             });
 
@@ -431,7 +420,8 @@ describe('checkpoint', function () {
                 ];
 
             beforeEach(function () {
-                $httpBackend.expect('GET', 'base/api/account/metadata').respond(metadata);
+                binarta.checkpoint.registrationForm.submit({username: 'u', password: 'p'});
+                account.refreshCaches();
             });
 
             it('when permitted', function () {
@@ -439,7 +429,7 @@ describe('checkpoint', function () {
                 $httpBackend.expect('POST', 'base/api/query/permission/list', {
                     filter: {
                         namespace: config.namespace,
-                        owner: 'foo'
+                        owner: 'principal(u)'
                     }
                 }).respond(permissions);
                 account.hasPermission('permission').then(function (p) {
@@ -455,7 +445,7 @@ describe('checkpoint', function () {
                 $httpBackend.expect('POST', 'base/api/query/permission/list', {
                     filter: {
                         namespace: config.namespace,
-                        owner: 'foo'
+                        owner: 'principal(u)'
                     }
                 }).respond(permissions);
                 account.hasPermission('not').then(function (p) {
@@ -471,7 +461,7 @@ describe('checkpoint', function () {
                 $httpBackend.expect('POST', 'base/api/query/permission/list', {
                     filter: {
                         namespace: config.namespace,
-                        owner: 'foo'
+                        owner: 'principal(u)'
                     }
                 }).respond(404);
                 account.hasPermission('permission').then(function (p) {
@@ -486,7 +476,7 @@ describe('checkpoint', function () {
 
     describe('FetchAccountMetadata', function () {
         var baseUri = 'base-uri/';
-        var usecase;
+        var usecase, account;
         var payload = {principal: 'foo'};
         var response = {
             unauthorized: function () {
@@ -499,7 +489,8 @@ describe('checkpoint', function () {
         };
         var topics;
 
-        beforeEach(inject(function (fetchAccountMetadata, topicRegistryMock) {
+        beforeEach(inject(function (_account_, fetchAccountMetadata, topicRegistryMock) {
+            account = _account_;
             usecase = fetchAccountMetadata;
             topics = topicRegistryMock;
             response.status = '';
@@ -512,34 +503,25 @@ describe('checkpoint', function () {
 
         function assertOk() {
             expect(response.status).toEqual('ok');
-            expect(response.metadata).toEqual(payload);
+            expect(response.metadata.principal).toBeDefined();
         }
 
-        it('on execute perform rest call', function () {
-            config.baseUri = baseUri;
-            config.namespace = 'namespace';
-            $httpBackend.expect('GET', baseUri + 'api/account/metadata', null, function (headers) {
-                return headers['X-Namespace'] == config.namespace;
-            }).respond(0);
-            usecase(response);
-            $httpBackend.flush();
-        });
-
         describe('when unauthenticated', function () {
-            beforeEach(function () {
-                $httpBackend.expect('GET', /.*/).respond(401);
+            beforeEach(inject(function (binartaCheckpointGateway) {
+                binartaCheckpointGateway.signout();
+                account.refreshCaches();
                 usecase(response);
-                $httpBackend.flush();
-            });
+                $rootScope.$digest();
+            }));
 
             it('status is unauthorized', assertUnauthorized);
 
             describe('and checkpoint.signin event raised', function () {
                 beforeEach(function () {
+                    binarta.checkpoint.registrationForm.submit({username: 'u', password: 'p'});
                     topics['checkpoint.signin']('ok');
-                    $httpBackend.expect('GET', /.*/).respond(200, payload);
                     usecase(response);
-                    $httpBackend.flush();
+                    $rootScope.$digest();
                 });
 
                 it('status is ok', assertOk);
@@ -548,9 +530,8 @@ describe('checkpoint', function () {
 
         describe('when unauthenticated and no callback defined', function () {
             beforeEach(function () {
-                $httpBackend.expect('GET', /.*/).respond(401);
                 usecase({});
-                $httpBackend.flush();
+                $rootScope.$digest();
             });
 
             it('do not throw error', function () {
@@ -559,20 +540,21 @@ describe('checkpoint', function () {
 
         describe('when authenticated', function () {
             beforeEach(function () {
-                $httpBackend.expect('GET', /.*/).respond(200, payload);
+                binarta.checkpoint.registrationForm.submit({username: 'u', password: 'p'});
+                account.refreshCaches();
                 usecase(response);
-                $httpBackend.flush();
+                $rootScope.$digest();
             });
 
             it('status is ok', assertOk);
 
             describe('and checkpoint.signout event raised', function () {
-                beforeEach(function () {
+                beforeEach(inject(function (binartaCheckpointGateway) {
+                    binartaCheckpointGateway.signout();
                     topics['checkpoint.signout']('ok');
-                    $httpBackend.expect('GET', /.*/).respond(401);
                     usecase(response);
-                    $httpBackend.flush();
-                });
+                    $rootScope.$digest();
+                }));
 
                 it('status is unauthorized', function () {
                     assertUnauthorized();
@@ -582,9 +564,10 @@ describe('checkpoint', function () {
 
         describe('when authenticated and no callback defined', function () {
             beforeEach(function () {
-                $httpBackend.expect('GET', /.*/).respond(200, payload);
+                binarta.checkpoint.registrationForm.submit({username: 'u', password: 'p'});
+                account.refreshCaches();
                 usecase({});
-                $httpBackend.flush();
+                $rootScope.$digest();
             });
 
             it('do not throw error', function () {
@@ -600,9 +583,10 @@ describe('checkpoint', function () {
 
             describe('when authenticated', function () {
                 beforeEach(function () {
-                    $httpBackend.expect('GET', /.*/).respond(200, payload);
+                    binarta.checkpoint.registrationForm.submit({username: 'u', password: 'p'});
+                    account.refreshCaches();
                     usecase(response);
-                    $httpBackend.flush();
+                    $rootScope.$digest();
                 });
 
                 describe('and checkpoint.signout event raised', function () {
@@ -629,11 +613,11 @@ describe('checkpoint', function () {
 
             describe('when authenticated without callback on response', function () {
                 beforeEach(function () {
-                    $httpBackend.expect('GET', /.*/).respond(200, payload);
+                    binarta.checkpoint.registrationForm.submit({username: 'u', password: 'p'});
+                    account.refreshCaches();
                     usecase({
                         scope: $rootScope.$new()
                     });
-                    $httpBackend.flush();
                 });
 
                 describe('and checkpoint.signout event raised', function () {
@@ -775,9 +759,11 @@ describe('checkpoint', function () {
         }));
 
         function withPermission(permission) {
-            $httpBackend.expect('GET', config.baseUri + 'api/account/metadata').respond(metadata);
+            binarta.checkpoint.registrationForm.submit({username: 'u', password: 'p'});
+            account.refreshCaches();
             $httpBackend.expect('POST', config.baseUri + 'api/query/permission/list').respond(permissions);
             usecase(r, permission);
+            $rootScope.$digest();
             $httpBackend.flush();
         }
 
@@ -1105,141 +1091,61 @@ describe('checkpoint', function () {
                             vat: ['required']
                         })
                     });
-
-                    it('rest service not called yet', function () {
-                        expect(rest).not.toHaveBeenCalled();
-                    });
                 });
 
-                describe('with all data', function () {
+                describe('given registration success', function () {
                     beforeEach(function () {
                         ctx.username = 'username';
                         ctx.email = 'email';
                         ctx.password = 'password';
                         ctx.vat = 'vat';
+                    });
+
+                    it('raises system.success notification', function () {
                         ctx.register();
-                    });
-
-                    it('puts scope on presenter', function () {
-                        expect(usecaseAdapter.calls.first().args[0]).toEqual(scope);
-                    });
-
-                    it('populates params on presenter', function () {
-                        expect(presenter.params.method).toEqual('PUT');
-                        expect(presenter.params.url).toEqual('api/accounts');
-                        expect(presenter.params.data.namespace).toEqual(config.namespace);
-                        expect(presenter.params.data.username).toEqual(ctx.username);
-                        expect(presenter.params.data.email).toEqual(ctx.email);
-                        expect(presenter.params.data.alias).toEqual(ctx.username);
-                        expect(presenter.params.data.password).toEqual(ctx.password);
-                        expect(presenter.params.data.vat).toEqual(ctx.vat);
-                    });
-
-                    it('populates params on presenter with base uri', function () {
-                        config.baseUri = 'baseUri/';
-                        ctx.register();
-                        expect(presenter.params.method).toEqual('PUT');
-                        expect(presenter.params.url).toEqual('baseUri/api/accounts');
-                        expect(presenter.params.data.namespace).toEqual(config.namespace);
-                        expect(presenter.params.data.username).toEqual(ctx.username);
-                        expect(presenter.params.data.email).toEqual(ctx.email);
-                        expect(presenter.params.data.alias).toEqual(ctx.username);
-                        expect(presenter.params.data.password).toEqual(ctx.password);
-                        expect(presenter.params.data.vat).toEqual(ctx.vat);
-                    });
-
-                    it('populates params on presenter based on registered mappers', inject(function (registrationRequestMessageMapperRegistry) {
-                        registrationRequestMessageMapperRegistry.add(function (scope) {
-                            return function (it) {
-                                it.customField = scope.customField;
-                                return it;
-                            }
+                        expect(dispatcher['system.success']).toEqual({
+                            code: 'checkpoint.registration.completed',
+                            default: 'Congratulations, your account has been created.'
                         });
-                        ctx.customField = '1234';
-                        ctx.register();
-                        expect(presenter.params.data.customField).toEqual('1234');
-                    }));
-
-                    it('calls rest service', function () {
-                        expect(rest.calls.first().args[0]).toEqual(presenter);
                     });
 
-                    describe('given registration success', function () {
-                        beforeEach(function () {
-                            usecaseAdapter.calls.first().args[1]();
-                        });
+                    describe('on signin success', function () {
+                        describe('and no success target defined', function () {
+                            beforeEach(function () {
+                                ctx.register();
+                            });
 
-                        it('raises system.success notification', function () {
-                            expect(dispatcher['system.success']).toEqual({
-                                code: 'checkpoint.registration.completed',
-                                default: 'Congratulations, your account has been created.'
+                            it('redirect to homepage', function () {
+                                expect(location.path()).toEqual('/');
                             });
                         });
 
-                        it('signin the new user', function () {
-                            expect(rest.calls.first().args[0].params.method).toEqual('POST');
-                            expect(rest.calls.first().args[0].params.url).toEqual('api/checkpoint');
-                            expect(rest.calls.first().args[0].params.data).toEqual({
-                                username: ctx.email,
-                                password: ctx.password,
-                                rememberMe: false,
-                                namespace: config.namespace
-                            });
-                            expect(rest.calls.first().args[0].params.withCredentials).toEqual(true);
-                        });
-
-                        describe('on signin success', function () {
-                            describe('and no success target defined', function () {
-                                beforeEach(function () {
-                                    usecaseAdapter.calls.mostRecent().args[1]();
-                                });
-
-                                it('redirect to homepage', function () {
-                                    expect(location.path()).toEqual('/');
-                                });
+                        describe('and success target is defined', function () {
+                            beforeEach(function () {
+                                config.onSigninSuccessTarget = '/target/';
+                                ctx.register();
                             });
 
-                            describe('and success target is defined', function () {
-                                beforeEach(function () {
-                                    config.onSigninSuccessTarget = '/target/';
-                                    usecaseAdapter.calls.mostRecent().args[1]();
-                                });
-
-                                it('redirect to target', function () {
-                                    expect(location.path()).toEqual('/target/');
-                                });
-
-                                it('reset target config', function () {
-                                    expect(config.onSigninSuccessTarget).toBeUndefined();
-                                });
+                            it('redirect to target', function () {
+                                expect(location.path()).toEqual('/target/');
                             });
-                        });
-                    });
 
-                    describe('given registration rejected', function () {
-                        beforeEach(function () {
-                            usecaseAdapter.calls.first().args[2].rejected();
-                        });
-
-                        it('raises checkpoint.registration.rejected notification', function () {
-                            expect(dispatcher['checkpoint.registration.rejected']).toEqual('rejected');
+                            it('reset target config', function () {
+                                expect(config.onSigninSuccessTarget).toBeUndefined();
+                            });
                         });
                     });
                 });
 
-                describe('with only required data', function () {
+                describe('given registration rejected', function () {
                     beforeEach(function () {
-                        ctx.email = 'email';
-                        ctx.password = 'password';
-                        ctx.register();
+                        ctx.username = 'invalid';
+                        ctx.password = 'invalid';
                     });
 
-                    it('populates params on presenter', function () {
-                        expect(presenter.params.data.username).toEqual('email');
-                        expect(presenter.params.data.email).toEqual('email');
-                        expect(presenter.params.data.alias).toEqual('email');
-                        expect(presenter.params.data.password).toEqual('password');
-                        expect(presenter.params.data.vat).toBeUndefined();
+                    it('raises checkpoint.registration.rejected notification', function () {
+                        ctx.register();
+                        expect(dispatcher['checkpoint.registration.rejected']).toEqual('rejected');
                     });
                 });
             });
@@ -1339,11 +1245,14 @@ describe('checkpoint', function () {
         beforeEach(inject(function (signInWithTokenService, _signinService_, $location) {
             service = signInWithTokenService;
             spyOn($location, 'replace');
+
+            binarta.checkpoint.registrationForm.submit({username: 'u', password: 'p'});
+            binarta.checkpoint.profile.signout();
         }));
 
         describe('with a token in the url', function () {
             beforeEach(inject(function ($location, $rootScope) {
-                $location.search('autoSigninToken', 'T');
+                $location.search('autoSigninToken', 'token(u)');
             }));
 
             describe('and we attempt to sign in', function () {
@@ -1351,45 +1260,23 @@ describe('checkpoint', function () {
                     service()
                 });
 
-                it('then signin service is used for provided token', function () {
-                    expect(rest.calls.first().args[0].params.data.token).toEqual('T');
-                    expect(rest.calls.first().args[0].params.data.username).toBeUndefined();
-                    expect(rest.calls.first().args[0].params.data.password).toBeUndefined();
-                });
+                it('then token is removed from location', inject(function ($location) {
+                    expect($location.search().autoSigninToken).toBeUndefined();
+                }));
 
-                describe('and we are signed in with success', function () {
-                    beforeEach(function () {
-                        usecaseAdapter.calls.first().args[1]();
-                    });
-
-                    it('then token is removed from location', inject(function ($location) {
-                        expect($location.search().autoSigninToken).toBeUndefined();
-                    }));
-
-                    it('and the history state record was replaced', inject(function ($location) {
-                        expect($location.replace).toHaveBeenCalled();
-                    }));
-                });
+                it('and the history state record was replaced', inject(function ($location) {
+                    expect($location.replace).toHaveBeenCalled();
+                }));
             });
 
             describe('and we attempt to sign in for a given token', function () {
                 beforeEach(function () {
-                    service({token: 'AT'})
+                    service({token: 'token(u)'})
                 });
 
-                it('then the signin request is sent for the given token', function () {
-                    expect(rest.calls.first().args[0].params.data.token).toEqual('AT');
-                });
-
-                describe('and we are signed in with success', function () {
-                    beforeEach(inject(function ($rootScope) {
-                        usecaseAdapter.calls.first().args[1]();
-                    }));
-
-                    it('then token is removed from location', inject(function ($location) {
-                        expect($location.search().token).toBeUndefined();
-                    }));
-                });
+                it('then token is removed from location', inject(function ($location) {
+                    expect($location.search().token).toBeUndefined();
+                }));
             });
         });
 
@@ -1400,17 +1287,17 @@ describe('checkpoint', function () {
                 });
 
                 it('no signin attempt was made', function () {
-                    expect(rest.calls.first()).toBeUndefined();
+                    expect(binarta.checkpoint.profile.isAuthenticated()).toBeFalsy();
                 })
             });
 
             describe('and we attempt to sign in for a provided token', function () {
                 beforeEach(function () {
-                    service({token: 'AT'})
+                    service({token: 'token(u)'})
                 });
 
                 it('then a signin attempt for the given token was made', function () {
-                    expect(rest.calls.first().args[0].params.data.token).toEqual('AT');
+                    expect(binarta.checkpoint.profile.isAuthenticated()).toBeTruthy();
                 })
             });
         });

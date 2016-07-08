@@ -1,31 +1,48 @@
 angular.module('checkpoint', ['ngRoute', 'config', 'notifications', 'angular.usecase.adapter', 'rest.client', 'ui.bootstrap.modal', 'binarta-checkpointjs-angular1'])
-    .service('account', ['binarta', '$http', '$q', 'config', 'topicRegistry', 'authRequiredPresenter', AccountService])
+    .service('account', ['binarta', '$log', '$http', '$q', 'config', 'topicRegistry', 'authRequiredPresenter', AccountService])
     .factory('fetchAccountMetadata', ['account', 'ngRegisterTopicHandler', FetchAccountMetadata])
     .factory('activeUserHasPermission', ['account', 'ngRegisterTopicHandler', ActiveUserHasPermission])
     .factory('registrationRequestMessageMapper', ['config', 'registrationRequestMessageMapperRegistry', RegistrationRequestMessageMapperFactory])
     .factory('registrationRequestMessageMapperRegistry', [RegistrationRequestMessageMapperRegistry])
     .factory('authRequiredPresenter', ['config', '$location', '$routeParams', AuthRequiredPresenterFactory])
-    .factory('signinService', ['config', 'usecaseAdapterFactory', 'topicMessageDispatcher', 'restServiceHandler', SigninServiceFactory])
+    .factory('signinService', ['binarta', 'topicMessageDispatcher', '$log', SigninServiceFactory])
     .factory('signInWithTokenService', ['signinService', '$location', SignInWithTokenServiceFactory])
-    .directive('checkpointPermission', ['ngRegisterTopicHandler', 'activeUserHasPermission', CheckpointHasDirectiveFactory])
+    .directive('checkpointPermission', ['ngRegisterTopicHandler', 'activeUserHasPermission', '$log', CheckpointHasDirectiveFactory])
     .directive('checkpointPermissionFor', ['activeUserHasPermission', CheckpointPermissionForDirectiveFactory])
     .directive('checkpointIsAuthenticated', ['fetchAccountMetadata', CheckpointIsAuthenticatedDirectiveFactory])
-    .directive('isAuthenticated', ['fetchAccountMetadata', IsAuthenticatedDirectiveFactory])
-    .directive('isUnauthenticated', ['fetchAccountMetadata', IsUnauthenticatedDirectiveFactory])
+    .directive('isAuthenticated', ['fetchAccountMetadata', '$log', IsAuthenticatedDirectiveFactory])
+    .directive('isUnauthenticated', ['fetchAccountMetadata', '$log', IsUnauthenticatedDirectiveFactory])
     .directive('authenticatedWithRealm', ['fetchAccountMetadata', 'topicRegistry', AuthenticatedWithRealmDirectiveFactory])
     .directive('loginModal', ['config', '$modal', LoginModalDirectiveFactory])
-    .controller('SigninController', ['$scope', '$location', 'config', 'signinService', 'account', SigninController])
+    .controller('SigninController', ['$scope', '$location', 'config', 'signinService', 'account', 'binarta', SigninController])
     .controller('AccountMetadataController', ['$scope', 'fetchAccountMetadata', AccountMetadataController])
-    .controller('RegistrationController', ['$scope', 'usecaseAdapterFactory', 'config', 'restServiceHandler', '$location', 'topicMessageDispatcher', 'registrationRequestMessageMapper', 'signinService', RegistrationController])
+    .controller('RegistrationController', ['$scope', 'config', '$location', 'topicMessageDispatcher', 'binarta', RegistrationController])
     .controller('SignoutController', ['$scope', '$http', 'topicMessageDispatcher', 'config', SignoutController])
-    .controller('welcomeMessageController', ['$location','$rootScope', WelcomeMessageController])
+    .controller('welcomeMessageController', ['$location', '$rootScope', WelcomeMessageController])
     .config(['$routeProvider', function ($routeProvider) {
         $routeProvider
-            .when('/signin', {templateUrl: 'partials/checkpoint/signin.html', controller: 'SigninController as checkpoint'})
-            .when('/:locale/signin', {templateUrl: 'partials/checkpoint/signin.html', controller: 'SigninController as checkpoint'})
-            .when('/register', {templateUrl: 'partials/register.html', controller: 'RegistrationController as checkpoint'})
-            .when('/:locale/register', {templateUrl: 'partials/register.html', controller: 'RegistrationController as checkpoint'})
-    }]);
+            .when('/signin', {
+                templateUrl: 'partials/checkpoint/signin.html',
+                controller: 'SigninController as checkpoint'
+            })
+            .when('/:locale/signin', {
+                templateUrl: 'partials/checkpoint/signin.html',
+                controller: 'SigninController as checkpoint'
+            })
+            .when('/register', {
+                templateUrl: 'partials/register.html',
+                controller: 'RegistrationController as checkpoint'
+            })
+            .when('/:locale/register', {
+                templateUrl: 'partials/register.html',
+                controller: 'RegistrationController as checkpoint'
+            })
+    }])
+    .run(['account', InitCaches]);
+
+function InitCaches(account) {
+    account.refreshCaches();
+}
 
 function SignoutController($scope, $http, topicMessageDispatcher, config) {
     $scope.submit = function () {
@@ -37,42 +54,32 @@ function SignoutController($scope, $http, topicMessageDispatcher, config) {
     }
 }
 
-function SigninServiceFactory(config, usecaseAdapterFactory, topicMessageDispatcher, restServiceHandler) {
-    return function(args) {
+function SigninServiceFactory(binarta, topicMessageDispatcher, $log) {
+    return function (args) {
+        $log.warn('@deprecated SigninService.execute() - use binarta.checkpoint.signinForm.submit() instead!');
         var onSuccessCallback = function () {
             topicMessageDispatcher.fire('checkpoint.signin', 'ok');
             args.success();
         };
 
-        var ctx = usecaseAdapterFactory(args.$scope, onSuccessCallback, {
-            rejected:function() {
-                if (args.rejected) args.rejected();
-                self.rejected = true
-            }
-        });
-
         var data = {};
-        Object.keys(args.request).forEach(function(k) {
+        Object.keys(args.request).forEach(function (k) {
             data[k] = args.request[k];
         });
-        data.namespace = config.namespace;
 
-        var baseUri = config.baseUri || '';
-        ctx.params = {
-            url: baseUri + 'api/checkpoint',
-            method: 'POST',
-            data: data,
-            withCredentials:true
-        };
-
-        restServiceHandler(ctx);
+        binarta.checkpoint.signinForm.submit(data, {
+            success: onSuccessCallback,
+            rejected: function (report) {
+                if (args.rejected) args.rejected(report);
+            }
+        });
     }
 }
 
-function SigninController($scope, $location, config, signinService, account) {
+function SigninController($scope, $location, config, signinService, account, binarta) {
     var self = this;
 
-    account.getMetadata().then(function() {
+    account.getMetadata().then(function () {
         $location.path('/');
     }, function () {
         self.config = {};
@@ -82,7 +89,7 @@ function SigninController($scope, $location, config, signinService, account) {
 
         $scope.init = init;
         self.init = init;
-        function init (config) {
+        function init(config) {
             self.config = config;
         }
 
@@ -104,18 +111,18 @@ function SigninController($scope, $location, config, signinService, account) {
             self.rejected = false;
             scope.violation = '';
             signinService({
-                $scope:$scope,
-                request:{
+                $scope: $scope,
+                request: {
                     username: scope.username,
                     password: scope.password,
                     rememberMe: scope.rememberMe
                 },
-                success:function() {
-                    if(isRedirectEnabled()) $location.path(config.onSigninSuccessTarget || config.redirectUri || '/');
+                success: function () {
+                    if (isRedirectEnabled()) $location.path(config.onSigninSuccessTarget || config.redirectUri || '/');
                     config.onSigninSuccessTarget = undefined;
-                    if(args && args.success) args.success();
+                    if (args && args.success) args.success();
                 },
-                rejected:function() {
+                rejected: function () {
                     self.rejected = true;
                     scope.violation = 'credentials.mismatch';
                 }
@@ -123,61 +130,65 @@ function SigninController($scope, $location, config, signinService, account) {
         }
 
         $scope.rejected = function () {
-            return self.rejected;
+            console.log('status: ' + binarta.checkpoint.signinForm.status());
+            console.log('violation: ' + binarta.checkpoint.signinForm.violation());
+            return binarta.checkpoint.signinForm.violation();
         };
     });
 }
 
-function AccountService(binarta, $http, $q, config, topicRegistry, authRequiredPresenter) {
+function AccountService(binarta, $log, $http, $q, config, topicRegistry, authRequiredPresenter) {
     var metadataPromise, permissionPromise;
+    var self = this;
 
-    function resetPromises() {
+    this.refreshCaches = function () {
         metadataPromise = undefined;
         permissionPromise = undefined;
-    }
+        binarta.checkpoint.profile.refresh();
+    };
 
     ['checkpoint.signin', 'checkpoint.signout'].forEach(function (topic) {
-        topicRegistry.subscribe(topic, resetPromises);
+        topicRegistry.subscribe(topic, self.refreshCaches);
     });
 
-    topicRegistry.subscribe('checkpoint.auth.required', function(target) {
-        resetPromises();
+    topicRegistry.subscribe('checkpoint.auth.required', function (target) {
+        self.refreshCaches();
         authRequiredPresenter(target);
     });
 
-    function getMetadata() {
-        if(angular.isUndefined(metadataPromise)) {
+    this.getMetadata = function () {
+        $log.warn('@deprecated AccountService.getMetadata() - use binarta.checkpoint.profile.metadata() instead!');
+        if (angular.isUndefined(metadataPromise)) {
             var d = $q.defer();
             metadataPromise = d.promise;
-            binarta.checkpoint.profile.refresh({
-                success:function() {
-                    d.resolve(binarta.checkpoint.profile.metadata());
-                }
-            });
+            if (binarta.checkpoint.profile.isAuthenticated())
+                d.resolve(binarta.checkpoint.profile.metadata());
+            else
+                d.reject();
         }
         return metadataPromise;
-    }
+    };
 
-    function getPermissions() {
-        if(angular.isUndefined(permissionPromise)) {
-            permissionPromise = getMetadata().then(function (metadata) {
+    this.getPermissions = function () {
+        if (angular.isUndefined(permissionPromise)) {
+            permissionPromise = self.getMetadata().then(function (metadata) {
                 return $http.post(config.baseUri + 'api/query/permission/list', {
-                        filter: {
-                            namespace: config.namespace,
-                            owner: metadata.principal
-                        }
-                    },{withCredentials: true})
+                    filter: {
+                        namespace: config.namespace,
+                        owner: metadata.principal
+                    }
+                }, {withCredentials: true})
                     .then(function (permissions) {
                         return permissions.data;
                     });
             });
         }
         return permissionPromise;
-    }
-    
-    function hasPermission(permission) {
+    };
+
+    this.hasPermission = function (permission) {
         var deferred = $q.defer();
-        getPermissions().then(function (permissions) {
+        self.getPermissions().then(function (permissions) {
             permissions.reduce(function (result, it) {
                 return result || it.name == permission
             }, false) ? deferred.resolve(true) : deferred.resolve(false);
@@ -185,12 +196,6 @@ function AccountService(binarta, $http, $q, config, topicRegistry, authRequiredP
             deferred.resolve(false);
         });
         return deferred.promise;
-    }
-
-    return {
-        getMetadata: getMetadata,
-        getPermissions: getPermissions,
-        hasPermission: hasPermission
     };
 }
 
@@ -199,6 +204,7 @@ function FetchAccountMetadata(account, ngRegisterTopicHandler) {
         function getMetadata() {
             account.getMetadata().then(authorized, unauthorized);
         }
+
         getMetadata();
 
         function authorized(metadata) {
@@ -255,14 +261,15 @@ function ActiveUserHasPermission(account, ngRegisterTopicHandler) {
         }
 
         function checkPermission() {
-            account.getPermissions().then(function(permissions) {
+            account.getPermissions().then(function (permissions) {
                 permissions.reduce(function (result, it) {
                     return result || it.name == permission
                 }, false) ? yes() : no();
-            }, function() {
+            }, function () {
                 no();
             });
         }
+
         checkPermission();
 
         if (response.scope) {
@@ -277,13 +284,13 @@ function ActiveUserHasPermission(account, ngRegisterTopicHandler) {
     };
 }
 
-// @deprecated Try to use the less intrusive checkpointPermissionFor directive
-function CheckpointHasDirectiveFactory(ngRegisterTopicHandler, activeUserHasPermission) {
+function CheckpointHasDirectiveFactory(ngRegisterTopicHandler, activeUserHasPermission, $log) {
     return {
         restrict: 'A',
         transclude: true,
         template: '<span ng-if="permitted" ng-transclude></span>',
         link: function (scope, el, attrs) {
+            $log.warn('@deprecated checkpoint-permission directive - use checkpoint-permission-for instead!');
             var init = function () {
                 activeUserHasPermission({
                     no: function () {
@@ -339,14 +346,14 @@ function CheckpointIsAuthenticatedDirectiveFactory(fetchAccountMetadata) {
     };
 }
 
-// @deprecated use CheckpointIsAuthenticated directive instead
-function IsAuthenticatedDirectiveFactory(fetchAccountMetadata) {
+function IsAuthenticatedDirectiveFactory(fetchAccountMetadata, $log) {
     return {
         restrict: 'E',
         scope: {},
         transclude: true,
         template: '<div ng-show="authenticated"><span ng-transclude></span></div>',
         link: function (scope) {
+            $log.warn('@deprecated is-authenticated directive - use checkpoint-is-authenticated instead!');
             fetchAccountMetadata({
                 ok: function () {
                     scope.authenticated = true
@@ -359,14 +366,14 @@ function IsAuthenticatedDirectiveFactory(fetchAccountMetadata) {
     }
 }
 
-// @deprecated use CheckpointIsAuthenticated directive instead
-function IsUnauthenticatedDirectiveFactory(fetchAccountMetadata) {
+function IsUnauthenticatedDirectiveFactory(fetchAccountMetadata, $log) {
     return {
         restrict: 'E',
         scope: {},
         transclude: true,
         template: '<div ng-show="unauthenticated"><span ng-transclude></span></div>',
         link: function (scope) {
+            $log.warn('@deprecated is-unauthenticated directive - use checkpoint-is-authenticated instead!');
             fetchAccountMetadata({
                 ok: function () {
                     scope.unauthenticated = false
@@ -385,13 +392,13 @@ function AuthenticatedWithRealmDirectiveFactory(fetchAccountMetadata, topicRegis
         scope: {},
         transclude: true,
         template: '<div ng-show="realm"><span ng-transclude></span></div>',
-        link: function(scope, el, attrs) {
-            var init = function() {
+        link: function (scope, el, attrs) {
+            var init = function () {
                 fetchAccountMetadata({
-                    ok: function(payload) {
+                    ok: function (payload) {
                         scope.realm = payload.realm == attrs.realm;
                     },
-                    unauthorized: function() {
+                    unauthorized: function () {
                         scope.realm = false;
                     }
                 })
@@ -409,18 +416,18 @@ function AuthenticatedWithRealmDirectiveFactory(fetchAccountMetadata, topicRegis
 function RegistrationRequestMessageMapperRegistry() {
     var mappers = [];
     return {
-        add:function(mapper) {
+        add: function (mapper) {
             mappers.push(mapper);
         },
-        all:function() {
+        all: function () {
             return mappers;
         }
     }
 }
 
 function RegistrationRequestMessageMapperFactory(config, registrationRequestMessageMapperRegistry) {
-    return function(scope) {
-        return registrationRequestMessageMapperRegistry.all().reduce(function(p, c) {
+    return function (scope) {
+        return registrationRequestMessageMapperRegistry.all().reduce(function (p, c) {
             return c(scope)(p);
         }, {
             namespace: config.namespace,
@@ -433,7 +440,7 @@ function RegistrationRequestMessageMapperFactory(config, registrationRequestMess
     }
 }
 
-function RegistrationController($scope, usecaseAdapterFactory, config, restServiceHandler, $location, topicMessageDispatcher, registrationRequestMessageMapper, signinService) {
+function RegistrationController($scope, config, $location, topicMessageDispatcher, binarta) {
     var self = this;
 
     $scope.register = function () {
@@ -452,43 +459,27 @@ function RegistrationController($scope, usecaseAdapterFactory, config, restServi
         }
 
         if (!$scope.registrationForm || ($scope.registrationForm && $scope.registrationForm.$valid)) {
-            var onSuccess = function() {
+            var onSuccess = function () {
                 topicMessageDispatcher.fire('system.success', {
-                    code:'checkpoint.registration.completed',
-                    default:'Congratulations, your account has been created.'
+                    code: 'checkpoint.registration.completed',
+                    default: 'Congratulations, your account has been created.'
                 });
 
-                signinService({
-                    $scope: $scope,
-                    request: {
-                        username: scope.email,
-                        password: scope.password,
-                        rememberMe: false
-                    },
-                    success: function () {
-                        $location.path(config.onSigninSuccessTarget || '/');
-                        config.onSigninSuccessTarget = undefined;
-                    }
-                });
+                $location.path(config.onSigninSuccessTarget || '/');
+                config.onSigninSuccessTarget = undefined;
             };
-            var presenter = usecaseAdapterFactory($scope, onSuccess, {
-                rejected:function() {
+            binarta.checkpoint.registrationForm.submit(scope, {
+                success: onSuccess,
+                rejected: function () {
                     topicMessageDispatcher.fire('checkpoint.registration.rejected', 'rejected');
                 }
             });
-            var baseUri = config.baseUri || '';
-            presenter.params = {
-                url: baseUri + 'api/accounts',
-                method: 'PUT',
-                data: registrationRequestMessageMapper(scope)
-            };
-            restServiceHandler(presenter);
         }
     }
 }
 
 function AuthRequiredPresenterFactory(config, $location, $routeParams) {
-    return function(target) {
+    return function (target) {
         var pathToSignin = $routeParams.locale ? '/' + $routeParams.locale + '/signin' : '/signin';
         if (target != pathToSignin) {
             config.onSigninSuccessTarget = target;
@@ -528,14 +519,14 @@ function WelcomeMessageController($location, $rootScope) {
 }
 
 function SignInWithTokenServiceFactory(signinService, $location) {
-    return function(args) {
+    return function (args) {
         var token = args && args.token || $location.search().autoSigninToken;
         if (token) signinService({
-            $scope:{},
-            request:{
-                token:token
+            $scope: {},
+            request: {
+                token: token
             },
-            success:function() {
+            success: function () {
                 $location.search('autoSigninToken', undefined).replace();
             }
         })
