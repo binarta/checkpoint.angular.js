@@ -38,10 +38,12 @@ angular.module('checkpoint', ['ngRoute', 'config', 'notifications', 'angular.use
                 controller: 'RegistrationController as checkpoint'
             })
     }])
-    .run(['account', InitCaches]);
+    .run(['binartaIsInitialised', 'account', InitCaches]);
 
-function InitCaches(account) {
-    account.refreshCaches();
+function InitCaches(binartaIsInitialised, account) {
+    binartaIsInitialised.then(function() {
+        account.refreshCaches();
+    });
 }
 
 function SignoutController($scope, $http, topicMessageDispatcher, config) {
@@ -130,21 +132,23 @@ function SigninController($scope, $location, config, signinService, account, bin
         }
 
         $scope.rejected = function () {
-            console.log('status: ' + binarta.checkpoint.signinForm.status());
-            console.log('violation: ' + binarta.checkpoint.signinForm.violation());
             return binarta.checkpoint.signinForm.violation();
         };
     });
 }
 
 function AccountService(binarta, $log, $http, $q, config, topicRegistry, authRequiredPresenter) {
+    var isProfileRefreshed = $q.defer();
+    isProfileRefreshed.resolve(); // assume the profile has already been refreshed.
+
     var metadataPromise, permissionPromise;
     var self = this;
 
     this.refreshCaches = function () {
         metadataPromise = undefined;
         permissionPromise = undefined;
-        binarta.checkpoint.profile.refresh();
+        isProfileRefreshed = $q.defer();
+        binarta.checkpoint.profile.refresh({success:isProfileRefreshed.resolve, unauthenticated:isProfileRefreshed.reject});
     };
 
     ['checkpoint.signin', 'checkpoint.signout'].forEach(function (topic) {
@@ -161,10 +165,12 @@ function AccountService(binarta, $log, $http, $q, config, topicRegistry, authReq
         if (angular.isUndefined(metadataPromise)) {
             var d = $q.defer();
             metadataPromise = d.promise;
-            if (binarta.checkpoint.profile.isAuthenticated())
-                d.resolve(binarta.checkpoint.profile.metadata());
-            else
-                d.reject();
+            isProfileRefreshed.promise.then(function() {
+                if (binarta.checkpoint.profile.isAuthenticated())
+                    d.resolve(binarta.checkpoint.profile.metadata());
+                else
+                    d.reject();
+            }, d.reject);
         }
         return metadataPromise;
     };

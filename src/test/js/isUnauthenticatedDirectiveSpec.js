@@ -6,13 +6,13 @@ describe('something', function() {
     var response;
 
     beforeEach(module('checkpoint'));
-    beforeEach(inject(function($rootScope, $injector) {
+    beforeEach(inject(function($rootScope, $log) {
         usecase = function(it) {
             usecaseCalled = true;
             response = it;
         };
         scope = $rootScope.$new();
-        directive = IsUnauthenticatedDirectiveFactory(usecase);
+        directive = IsUnauthenticatedDirectiveFactory(usecase, $log);
         directive.link(scope)
     }));
 

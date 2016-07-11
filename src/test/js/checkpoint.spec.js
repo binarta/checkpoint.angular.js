@@ -159,7 +159,6 @@ describe('checkpoint', function () {
                         var ctx;
 
                         beforeEach(function () {
-                            console.log('context: ' + context);
                             if (context == 'scope') ctx = scope;
                             if (context == 'controller') ctx = ctrl;
                         });
@@ -278,8 +277,7 @@ describe('checkpoint', function () {
         });
 
         describe('get metadata', function () {
-            var validData = {billing: {complete: false}},
-                result, metadataAvailable;
+            var result, metadataAvailable;
 
             function callGetMetadata() {
                 account.getMetadata().then(function (metadata) {
@@ -850,7 +848,7 @@ describe('checkpoint', function () {
     describe('checkpoint has directive', function () {
         var directive, registry, response, expectedPermission;
 
-        beforeEach(inject(function () {
+        beforeEach(inject(function ($log) {
             response = undefined;
             registry = function (scope, topic, listener) {
                 registry[topic] = listener;
@@ -859,7 +857,7 @@ describe('checkpoint', function () {
                 response = it;
                 expectedPermission = permission;
             };
-            directive = CheckpointHasDirectiveFactory(registry, usecase);
+            directive = CheckpointHasDirectiveFactory(registry, usecase, $log);
             scope = {};
             directive.link(scope, null, {for: 'permission'});
         }));
