@@ -1,5 +1,8 @@
 {
   "default": {
+    "binartajs": "bower_components/binartajs/src/binarta.js",
+    "binarta-applicationjs": "bower_components/binartajs/src/application.js",
+    "binarta-checkpointjs": "bower_components/binartajs/src/checkpoint.js",
     "checkpoint": "bower_components/binarta.checkpoint.angular/src/main/js/checkpoint.js",
     "checkpoint.accounts": "bower_components/binarta.checkpoint.angular/src/main/js/checkpoint.accounts.js",
     "checkpoint.keepalive": "bower_components/binarta.checkpoint.angular/src/main/js/checkpoint.keepalive.js",
