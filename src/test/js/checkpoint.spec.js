@@ -54,34 +54,10 @@ describe('checkpoint', function () {
             ctrl = $controller(SignoutController, {$scope: scope, config: {}});
         }));
 
-        it('on submit send delete request', function () {
-            $httpBackend.expect('DELETE', 'api/checkpoint').respond(0);
-            scope.submit();
-            $httpBackend.flush();
-        });
-
         it('on submit success', function () {
-            $httpBackend.expect('DELETE', /.*/).respond(200);
             scope.submit();
-            $httpBackend.flush();
             expect(dispatcher['checkpoint.signout']).toEqual('ok');
         });
-    });
-
-    describe('SignoutController with baseUri', function () {
-        beforeEach(inject(function ($controller) {
-            ctrl = $controller(SignoutController, {
-                $scope: scope,
-                config: {baseUri: 'baseUri/'},
-                topicMessageDispatcher: dispatcher
-            });
-        }));
-
-        it('on submit send delete request', function () {
-            $httpBackend.expect('DELETE', 'baseUri/api/checkpoint').respond(0);
-            scope.submit();
-            $httpBackend.flush();
-        })
     });
 
     describe('SigninService', function () {

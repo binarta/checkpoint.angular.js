@@ -17,7 +17,7 @@ angular.module('checkpoint', ['ngRoute', 'config', 'notifications', 'angular.use
     .controller('SigninController', ['$scope', '$location', 'config', 'signinService', 'account', 'binarta', SigninController])
     .controller('AccountMetadataController', ['$scope', 'fetchAccountMetadata', AccountMetadataController])
     .controller('RegistrationController', ['$scope', 'config', '$location', 'topicMessageDispatcher', 'binarta', RegistrationController])
-    .controller('SignoutController', ['$scope', '$http', 'topicMessageDispatcher', 'config', SignoutController])
+    .controller('SignoutController', ['$scope', '$log', 'binarta', 'topicMessageDispatcher', SignoutController])
     .controller('welcomeMessageController', ['$location', '$rootScope', WelcomeMessageController])
     .config(['$routeProvider', function ($routeProvider) {
         $routeProvider
@@ -41,18 +41,19 @@ angular.module('checkpoint', ['ngRoute', 'config', 'notifications', 'angular.use
     .run(['binartaIsInitialised', 'account', InitCaches]);
 
 function InitCaches(binartaIsInitialised, account) {
-    binartaIsInitialised.then(function() {
+    binartaIsInitialised.then(function () {
         account.refreshCaches();
     });
 }
 
-function SignoutController($scope, $http, topicMessageDispatcher, config) {
+function SignoutController($scope, $log, binarta, topicMessageDispatcher) {
     $scope.submit = function () {
-        var onSuccess = function () {
-            topicMessageDispatcher.fire('checkpoint.signout', 'ok');
-        };
-
-        $http.delete((config.baseUri || '') + 'api/checkpoint', {withCredentials: true}).success(onSuccess);
+        $log.warn('@deprecated SignoutController.submit() - use binarta.checkpoint.profile.signout() instead!');
+        binarta.checkpoint.profile.signout({
+            unauthenticated: function () {
+                topicMessageDispatcher.fire('checkpoint.signout', 'ok');
+            }
+        });
     }
 }
 
@@ -148,7 +149,10 @@ function AccountService(binarta, $log, $http, $q, config, topicRegistry, authReq
         metadataPromise = undefined;
         permissionPromise = undefined;
         isProfileRefreshed = $q.defer();
-        binarta.checkpoint.profile.refresh({success:isProfileRefreshed.resolve, unauthenticated:isProfileRefreshed.reject});
+        binarta.checkpoint.profile.refresh({
+            success: isProfileRefreshed.resolve,
+            unauthenticated: isProfileRefreshed.reject
+        });
     };
 
     ['checkpoint.signin', 'checkpoint.signout'].forEach(function (topic) {
@@ -165,7 +169,7 @@ function AccountService(binarta, $log, $http, $q, config, topicRegistry, authReq
         if (angular.isUndefined(metadataPromise)) {
             var d = $q.defer();
             metadataPromise = d.promise;
-            isProfileRefreshed.promise.then(function() {
+            isProfileRefreshed.promise.then(function () {
                 if (binarta.checkpoint.profile.isAuthenticated())
                     d.resolve(binarta.checkpoint.profile.metadata());
                 else
