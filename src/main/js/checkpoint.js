@@ -1,14 +1,14 @@
 angular.module('checkpoint', ['ngRoute', 'config', 'notifications', 'angular.usecase.adapter', 'rest.client', 'ui.bootstrap.modal', 'binarta-checkpointjs-angular1'])
     .service('account', ['binarta', '$log', '$http', '$q', 'config', 'topicRegistry', 'authRequiredPresenter', AccountService])
-    .factory('fetchAccountMetadata', ['account', 'ngRegisterTopicHandler', FetchAccountMetadata])
-    .factory('activeUserHasPermission', ['account', 'ngRegisterTopicHandler', ActiveUserHasPermission])
+    .factory('fetchAccountMetadata', ['account', 'ngRegisterTopicHandler', '$log', FetchAccountMetadata])
+    .factory('activeUserHasPermission', ['account', 'ngRegisterTopicHandler', '$log', ActiveUserHasPermission])
     .factory('registrationRequestMessageMapper', ['config', 'registrationRequestMessageMapperRegistry', RegistrationRequestMessageMapperFactory])
     .factory('registrationRequestMessageMapperRegistry', [RegistrationRequestMessageMapperRegistry])
     .factory('authRequiredPresenter', ['config', '$location', '$routeParams', AuthRequiredPresenterFactory])
     .factory('signinService', ['binarta', 'topicMessageDispatcher', '$log', SigninServiceFactory])
     .factory('signInWithTokenService', ['signinService', '$location', SignInWithTokenServiceFactory])
     .directive('checkpointPermission', ['ngRegisterTopicHandler', 'activeUserHasPermission', '$log', CheckpointHasDirectiveFactory])
-    .directive('checkpointPermissionFor', ['activeUserHasPermission', CheckpointPermissionForDirectiveFactory])
+    .directive('checkpointPermissionFor', ['binarta', CheckpointPermissionForDirectiveFactory])
     .directive('checkpointIsAuthenticated', ['fetchAccountMetadata', CheckpointIsAuthenticatedDirectiveFactory])
     .directive('isAuthenticated', ['fetchAccountMetadata', '$log', IsAuthenticatedDirectiveFactory])
     .directive('isUnauthenticated', ['fetchAccountMetadata', '$log', IsUnauthenticatedDirectiveFactory])
@@ -82,9 +82,9 @@ function SigninServiceFactory(binarta, topicMessageDispatcher, $log) {
 function SigninController($scope, $location, config, signinService, account, binarta) {
     var self = this;
 
-    account.getMetadata().then(function () {
+    if(binarta.checkpoint.profile.isAuthenticated())
         $location.path('/');
-    }, function () {
+    else {
         self.config = {};
 
         $scope.username = $location.search().username;
@@ -135,7 +135,7 @@ function SigninController($scope, $location, config, signinService, account, bin
         $scope.rejected = function () {
             return binarta.checkpoint.signinForm.violation();
         };
-    });
+    }
 }
 
 function AccountService(binarta, $log, $http, $q, config, topicRegistry, authRequiredPresenter) {
@@ -144,6 +144,8 @@ function AccountService(binarta, $log, $http, $q, config, topicRegistry, authReq
 
     var metadataPromise, permissionPromise;
     var self = this;
+
+    binarta.checkpoint.signinForm.eventRegistry.add(new UserSessionListener(self));
 
     this.refreshCaches = function () {
         metadataPromise = undefined;
@@ -155,7 +157,7 @@ function AccountService(binarta, $log, $http, $q, config, topicRegistry, authReq
         });
     };
 
-    ['checkpoint.signin', 'checkpoint.signout'].forEach(function (topic) {
+    ['checkpoint.signout'].forEach(function (topic) {
         topicRegistry.subscribe(topic, self.refreshCaches);
     });
 
@@ -180,17 +182,12 @@ function AccountService(binarta, $log, $http, $q, config, topicRegistry, authReq
     };
 
     this.getPermissions = function () {
+        $log.warn('@deprecated AccountService.getPermissions() - use binarta.checkpoint.profile.permissions() instead!');
         if (angular.isUndefined(permissionPromise)) {
-            permissionPromise = self.getMetadata().then(function (metadata) {
-                return $http.post(config.baseUri + 'api/query/permission/list', {
-                    filter: {
-                        namespace: config.namespace,
-                        owner: metadata.principal
-                    }
-                }, {withCredentials: true})
-                    .then(function (permissions) {
-                        return permissions.data;
-                    });
+            var d = $q.defer();
+            permissionPromise = d.promise;
+            isProfileRefreshed.promise.then(function () {
+                d.resolve(binarta.checkpoint.profile.permissions());
             });
         }
         return permissionPromise;
@@ -207,9 +204,16 @@ function AccountService(binarta, $log, $http, $q, config, topicRegistry, authReq
         });
         return deferred.promise;
     };
+
+    function UserSessionListener(self) {
+        this.signedin = function () {
+            self.refreshCaches();
+        };
+    }
 }
 
-function FetchAccountMetadata(account, ngRegisterTopicHandler) {
+function FetchAccountMetadata(account, ngRegisterTopicHandler, $log) {
+    $log.warn('@deprecated FetchAccountMetadata - use binarta.checkpoint.profile.metadata() instead!');
     return function (response) {
         function getMetadata() {
             account.getMetadata().then(authorized, unauthorized);
@@ -260,7 +264,8 @@ function AccountMetadataController($scope, fetchAccountMetadata) {
     };
 }
 
-function ActiveUserHasPermission(account, ngRegisterTopicHandler) {
+function ActiveUserHasPermission(account, ngRegisterTopicHandler, $log) {
+    $log.warn('@deprecated ActiveUserHasPermission - use binarta.checkpoint.profile.hasPermission() instead!');
     return function (response, permission) {
         function no() {
             if (response.no) response.no();
@@ -322,19 +327,22 @@ function CheckpointHasDirectiveFactory(ngRegisterTopicHandler, activeUserHasPerm
     };
 }
 
-function CheckpointPermissionForDirectiveFactory(activeUserHasPermission) {
+function CheckpointPermissionForDirectiveFactory(binarta) {
     return {
         scope: true,
         link: function (scope, el, attrs) {
-            activeUserHasPermission({
-                no: function () {
+            var listener = {
+                signedin: function () {
+                    scope.permitted = binarta.checkpoint.profile.hasPermission(attrs.checkpointPermissionFor);
+                },
+                signedout: function () {
                     scope.permitted = false;
-                },
-                yes: function () {
-                    scope.permitted = true;
-                },
-                scope: scope
-            }, attrs.checkpointPermissionFor);
+                }
+            };
+            binarta.checkpoint.profile.eventRegistry.add(listener);
+            scope.$on('$destroy', function () {
+                binarta.checkpoint.profile.eventRegistry.remove(listener);
+            });
         }
     };
 }

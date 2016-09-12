@@ -278,7 +278,6 @@ describe('checkpoint', function () {
 
                 it('on signin event then metadata is available', function () {
                     binarta.checkpoint.registrationForm.submit({username: 'u', password: 'p'});
-                    topics['checkpoint.signin']('ok');
                     callGetMetadata();
                     expect(result.username).toEqual('u');
                 });
@@ -330,20 +329,13 @@ describe('checkpoint', function () {
         });
 
         describe('get permissions', function () {
-            var permissions = {permission: 'bar'},
+            var permissions = [{name:'p1'}, {name:'p2'}, {name:'p3'}],
                 result;
 
             function callGetPermissions() {
-                $httpBackend.expect('POST', 'base/api/query/permission/list', {
-                    filter: {
-                        namespace: config.namespace,
-                        owner: 'principal(u)'
-                    }
-                }).respond(permissions);
                 account.getPermissions().then(function (permissions) {
                     result = permissions;
                 });
-                $httpBackend.flush();
             }
 
             beforeEach(function () {
@@ -353,6 +345,7 @@ describe('checkpoint', function () {
             });
 
             it('first getPermissions call', function () {
+                $rootScope.$apply();
                 expect(result).toEqual(permissions);
             });
 
@@ -367,7 +360,9 @@ describe('checkpoint', function () {
             });
 
             it('on signin should remove cached promise', function () {
-                topics['checkpoint.signin']('ok');
+                binarta.checkpoint.signinForm.eventRegistry.forEach(function(l) {
+                    l.signedin();
+                });
 
                 callGetPermissions();
             });
@@ -400,48 +395,19 @@ describe('checkpoint', function () {
 
             it('when permitted', function () {
                 var permitted;
-                $httpBackend.expect('POST', 'base/api/query/permission/list', {
-                    filter: {
-                        namespace: config.namespace,
-                        owner: 'principal(u)'
-                    }
-                }).respond(permissions);
-                account.hasPermission('permission').then(function (p) {
+                account.hasPermission('p1').then(function (p) {
                     permitted = p;
                 });
-                $httpBackend.flush();
-
+                $rootScope.$digest();
                 expect(permitted).toEqual(true);
             });
 
             it('when not permitted', function () {
                 var permitted;
-                $httpBackend.expect('POST', 'base/api/query/permission/list', {
-                    filter: {
-                        namespace: config.namespace,
-                        owner: 'principal(u)'
-                    }
-                }).respond(permissions);
                 account.hasPermission('not').then(function (p) {
                     permitted = p;
                 });
-                $httpBackend.flush();
-
-                expect(permitted).toEqual(false);
-            });
-
-            it('getPermissions call failed', function () {
-                var permitted;
-                $httpBackend.expect('POST', 'base/api/query/permission/list', {
-                    filter: {
-                        namespace: config.namespace,
-                        owner: 'principal(u)'
-                    }
-                }).respond(404);
-                account.hasPermission('permission').then(function (p) {
-                    permitted = p;
-                });
-                $httpBackend.flush();
+                $rootScope.$digest();
 
                 expect(permitted).toEqual(false);
             });
@@ -493,7 +459,9 @@ describe('checkpoint', function () {
             describe('and checkpoint.signin event raised', function () {
                 beforeEach(function () {
                     binarta.checkpoint.registrationForm.submit({username: 'u', password: 'p'});
-                    topics['checkpoint.signin']('ok');
+                    binarta.checkpoint.signinForm.eventRegistry.forEach(function(l) {
+                        l.signedin();
+                    });
                     usecase(response);
                     $rootScope.$digest();
                 });
@@ -735,10 +703,8 @@ describe('checkpoint', function () {
         function withPermission(permission) {
             binarta.checkpoint.registrationForm.submit({username: 'u', password: 'p'});
             account.refreshCaches();
-            $httpBackend.expect('POST', config.baseUri + 'api/query/permission/list').respond(permissions);
             usecase(r, permission);
             $rootScope.$digest();
-            $httpBackend.flush();
         }
 
         it('and unknown permission is rejected', function () {
@@ -748,7 +714,7 @@ describe('checkpoint', function () {
         });
 
         it('with known permission is accepted', function () {
-            withPermission('permission');
+            withPermission('p1');
 
             expect(response).toEqual(true);
         });
@@ -761,7 +727,7 @@ describe('checkpoint', function () {
 
         it('and response.yes is not given', function () {
             r.yes = undefined;
-            withPermission('permission');
+            withPermission('p1');
 
             expect(response).toBeUndefined();
         });
@@ -769,7 +735,7 @@ describe('checkpoint', function () {
         describe('and scope is not given with response', function () {
             describe('and usecase has triggered with known permission', function () {
                 beforeEach(function () {
-                    withPermission('permission');
+                    withPermission('p1');
                 });
 
                 describe('and signout', function () {
@@ -794,7 +760,7 @@ describe('checkpoint', function () {
 
             describe('and usecase has triggered', function () {
                 beforeEach(function () {
-                    withPermission('permission');
+                    withPermission('p1');
                 });
 
                 describe('and signout', function () {
@@ -870,44 +836,6 @@ describe('checkpoint', function () {
                 expect(response).toBeDefined();
                 expect(expectedPermission).toEqual('permission');
             });
-        });
-    });
-
-    describe('checkpointPermissionFor directive', function () {
-        var directive, response, expectedPermission;
-
-        beforeEach(inject(function () {
-            response = undefined;
-            var usecase = function (it, permission) {
-                response = it;
-                expectedPermission = permission;
-            };
-            directive = CheckpointPermissionForDirectiveFactory(usecase);
-            scope = {};
-            directive.link(scope, null, {checkpointPermissionFor: 'permission'});
-        }));
-
-        it('directive should create a child scope', function () {
-            expect(directive.scope).toEqual(true);
-        });
-
-        it('link trigger usecase', function () {
-            expect(response).toBeDefined();
-            expect(expectedPermission).toEqual('permission');
-        });
-
-        it('scope is given to usecase', function () {
-            expect(response.scope).toEqual(scope);
-        });
-
-        it('not permitted', function () {
-            response.no();
-            expect(scope.permitted).toEqual(false);
-        });
-
-        it('permitted', function () {
-            response.yes();
-            expect(scope.permitted).toEqual(true);
         });
     });
 
