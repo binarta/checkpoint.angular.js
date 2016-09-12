@@ -331,15 +331,18 @@ function CheckpointPermissionForDirectiveFactory(binarta) {
     return {
         scope: true,
         link: function (scope, el, attrs) {
+            function refresh() {
+                scope.permitted = binarta.checkpoint.profile.hasPermission(attrs.checkpointPermissionFor);
+            }
+
             var listener = {
-                signedin: function () {
-                    scope.permitted = binarta.checkpoint.profile.hasPermission(attrs.checkpointPermissionFor);
-                },
+                signedin: refresh,
                 signedout: function () {
                     scope.permitted = false;
                 }
             };
             binarta.checkpoint.profile.eventRegistry.add(listener);
+            refresh();
             scope.$on('$destroy', function () {
                 binarta.checkpoint.profile.eventRegistry.remove(listener);
             });
