@@ -15,7 +15,7 @@ angular.module('checkpoint', ['ngRoute', 'config', 'notifications', 'angular.use
     .directive('authenticatedWithRealm', ['fetchAccountMetadata', 'topicRegistry', AuthenticatedWithRealmDirectiveFactory])
     .directive('loginModal', ['config', '$modal', LoginModalDirectiveFactory])
     .controller('SigninController', ['$scope', '$location', 'config', 'signinService', 'account', 'binarta', SigninController])
-    .controller('AccountMetadataController', ['$scope', 'fetchAccountMetadata', AccountMetadataController])
+    .controller('AccountMetadataController', ['$scope', 'binarta', AccountMetadataController])
     .controller('RegistrationController', ['$scope', 'config', '$location', 'topicMessageDispatcher', 'binarta', RegistrationController])
     .controller('SignoutController', ['$scope', '$log', 'binarta', 'topicMessageDispatcher', SignoutController])
     .controller('welcomeMessageController', ['$location', '$rootScope', WelcomeMessageController])
@@ -241,19 +241,25 @@ function FetchAccountMetadata(account, ngRegisterTopicHandler, $log) {
     };
 }
 
-function AccountMetadataController($scope, fetchAccountMetadata) {
+function AccountMetadataController($scope, binarta) {
     var self = this;
 
-    fetchAccountMetadata({
-        unauthorized: function () {
-            self.status = 'unauthorized';
-        },
-        ok: function (it) {
-            self.status = 'ok';
-            $scope.metadata = it;
-        },
-        scope: $scope
+    var observer = binarta.checkpoint.profile.eventRegistry.observe({
+        signedin: onSignedIn,
+        signedout: onSignedOut
     });
+
+    binarta.checkpoint.profile.isAuthenticated() ? onSignedIn() : onSignedOut();
+
+    function onSignedIn() {
+        self.status = 'ok';
+        $scope.metadata = binarta.checkpoint.profile.metadata();
+    }
+
+    function onSignedOut() {
+        self.status = 'unauthorized';
+        $scope.metadata = undefined;
+    }
 
     $scope.unauthorized = function () {
         return self.status == 'unauthorized';
@@ -262,6 +268,10 @@ function AccountMetadataController($scope, fetchAccountMetadata) {
     $scope.authorized = function () {
         return self.status == 'ok';
     };
+
+    $scope.$on('$destroy', function () {
+        observer.disconnect();
+    });
 }
 
 function ActiveUserHasPermission(account, ngRegisterTopicHandler, $log) {

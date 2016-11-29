@@ -585,42 +585,92 @@ describe('checkpoint', function () {
     });
 
     describe('AccountMetadataController', function () {
-        var registry, response;
-        var payload = {};
-        var presenter = jasmine.createSpy('presenter');
+        var $controller;
 
-        beforeEach(inject(function ($controller, topicRegistryMock) {
-            response = undefined;
-            registry = topicRegistryMock;
-            var usecase = function (it) {
-                response = it
-            };
-            ctrl = $controller(AccountMetadataController, {
-                $scope: scope,
-                topicRegistry: registry,
-                fetchAccountMetadata: usecase,
-                authRequiredPresenter: presenter
-            });
+        beforeEach(inject(function (_$controller_) {
+            $controller = _$controller_;
         }));
 
-        it('scope is given to fetchAccountMetadata', function () {
-            expect(response.scope).toEqual(scope);
+        function assertSignedIn() {
+            it('status is ok', function () {
+                expect(ctrl.status).toEqual('ok');
+            });
+
+            it('on calling authorized on scope', function () {
+                expect(scope.authorized()).toBeTruthy();
+            });
+
+            it('on calling unauthorized on scope', function () {
+                expect(scope.unauthorized()).toBeFalsy();
+            });
+
+            it('metadata is on scope', function () {
+                expect(scope.metadata.username).toEqual('u');
+                expect(scope.metadata.password).toEqual('p');
+            });
+        }
+
+        function assertSignedOut() {
+            it('status is unauthorized', function () {
+                expect(ctrl.status).toEqual('unauthorized');
+            });
+
+            it('on calling authorized on scope', function () {
+                expect(scope.authorized()).toBeFalsy();
+            });
+
+            it('on calling unauthorized on scope', function () {
+                expect(scope.unauthorized()).toBeTruthy();
+            });
+
+            it('no metadata on scope', function () {
+                expect(scope.metadata).toBeUndefined();
+            });
+        }
+
+        describe('on signed out', function () {
+            beforeEach(function () {
+                ctrl = $controller('AccountMetadataController', {$scope: scope});
+            });
+
+            assertSignedOut();
+
+            describe('and sign in', function () {
+                beforeEach(function () {
+                    binarta.checkpoint.registrationForm.submit({username: 'u', password: 'p'});
+                });
+
+                assertSignedIn();
+            });
         });
 
-        it('fetch metadata unauthorized', function () {
-            expect(scope.unauthorized()).toEqual(false);
-            response.unauthorized();
-            expect(scope.unauthorized()).toEqual(true);
+        describe('on signed in', function () {
+            beforeEach(function () {
+                binarta.checkpoint.registrationForm.submit({username: 'u', password: 'p'});
+                ctrl = $controller('AccountMetadataController', {$scope: scope});
+            });
+
+            assertSignedIn();
+
+            describe('and sign out', function () {
+                beforeEach(function () {
+                    binarta.checkpoint.profile.signout();
+                });
+
+                assertSignedOut();
+            });
         });
 
-        it('fetch metadata success', function () {
-            ctrl.status = 'unauthorized';
-            expect(scope.unauthorized()).toEqual(true);
-            expect(scope.authorized()).toEqual(false);
-            response.ok(payload);
-            expect(scope.unauthorized()).toEqual(false);
-            expect(scope.authorized()).toEqual(true);
-            expect(scope.metadata).toEqual(payload);
+        describe('on destroy', function () {
+            beforeEach(function () {
+                ctrl = $controller('AccountMetadataController', {$scope: scope});
+                scope.$broadcast('$destroy');
+            });
+
+            it('profile observer is disconnected', function () {
+                binarta.checkpoint.signinForm.submit({username: 'u', password: 'p'});
+                expect(ctrl.status).toEqual('unauthorized');
+            });
         });
     });
 
