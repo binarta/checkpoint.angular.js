@@ -213,8 +213,8 @@ function AccountService(binarta, $log, $http, $q, config, topicRegistry, authReq
 }
 
 function FetchAccountMetadata(account, ngRegisterTopicHandler, $log) {
-    $log.warn('@deprecated FetchAccountMetadata - use binarta.checkpoint.profile.metadata() instead!');
     return function (response) {
+        $log.warn('@deprecated FetchAccountMetadata - use binarta.checkpoint.profile.metadata() instead!');
         function getMetadata() {
             account.getMetadata().then(authorized, unauthorized);
         }
@@ -275,8 +275,8 @@ function AccountMetadataController($scope, binarta) {
 }
 
 function ActiveUserHasPermission(account, ngRegisterTopicHandler, $log) {
-    $log.warn('@deprecated ActiveUserHasPermission - use binarta.checkpoint.profile.hasPermission() instead!');
     return function (response, permission) {
+        $log.warn('@deprecated ActiveUserHasPermission - use binarta.checkpoint.profile.hasPermission() instead!');
         function no() {
             if (response.no) response.no();
         }
