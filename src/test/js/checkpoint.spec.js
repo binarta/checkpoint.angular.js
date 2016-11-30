@@ -1,6 +1,6 @@
 describe('checkpoint', function () {
     var self = this;
-    var $controller, jQuerySelector, jQueryTriggeredEvent;
+    var $controller, $compile, jQuerySelector, jQueryTriggeredEvent;
     var binarta, ctrl, $rootScope, scope, $httpBackend, location, dispatcher, registry, config;
     var payload = {};
     var usecaseAdapter;
@@ -16,9 +16,11 @@ describe('checkpoint', function () {
     beforeEach(module('rest.client'));
     beforeEach(module('notifications'));
     beforeEach(module('angular.usecase.adapter'));
-    beforeEach(inject(function (_binarta_, binartaCheckpointGateway, _$rootScope_, $injector, $location, topicMessageDispatcherMock, topicRegistryMock, usecaseAdapterFactory, restServiceHandler) {
+    beforeEach(inject(function (_binarta_, binartaCheckpointGateway, _$rootScope_, _$compile_, $injector, $location,
+                                topicMessageDispatcherMock, topicRegistryMock, usecaseAdapterFactory, restServiceHandler) {
         binarta = _binarta_;
         $rootScope = _$rootScope_;
+        $compile = _$compile_;
         scope = $rootScope.$new();
         config = $injector.get('config');
         location = $location;
@@ -890,38 +892,65 @@ describe('checkpoint', function () {
     });
 
     describe('checkpointIsAuthenticated directive', function () {
-        var directive, response;
+        var element;
 
-        beforeEach(inject(function () {
-            response = undefined;
-            var usecase = function (it) {
-                response = it;
-            };
-            directive = CheckpointIsAuthenticatedDirectiveFactory(usecase);
-            scope = {};
-            directive.link(scope);
-        }));
-
-        it('directive should create a child scope', function () {
-            expect(directive.scope).toEqual(true);
+        beforeEach(function () {
+            element = angular.element('<div checkpoint-is-authenticated></div>');
         });
 
-        it('link trigger usecase', function () {
-            expect(response).toBeDefined();
+        describe('when not signed in', function () {
+            beforeEach(function () {
+                $compile(element)($rootScope.$new());
+                scope = element.scope();
+            });
+
+            it('is unauthenticated', function () {
+                expect(scope.authenticated).toBeFalsy();
+            });
+
+            describe('on signin', function () {
+                beforeEach(function () {
+                    binarta.checkpoint.registrationForm.submit({username: 'u', password: 'p'});
+                });
+
+                it('is authenticated', function () {
+                    expect(scope.authenticated).toBeTruthy();
+                });
+
+                describe('on signout', function () {
+                    beforeEach(function () {
+                        binarta.checkpoint.profile.signout();
+                    });
+
+                    it('is unauthenticated', function () {
+                        expect(scope.authenticated).toBeFalsy();
+                    });
+                });
+            });
+
+            describe('on destroy', function () {
+                beforeEach(function () {
+                    scope.$broadcast('$destroy');
+                });
+
+                it('is not listening to changes', function () {
+                    expect(scope.authenticated).toBeFalsy();
+                    binarta.checkpoint.registrationForm.submit({username: 'u', password: 'p'});
+                    expect(scope.authenticated).toBeFalsy();
+                });
+            });
         });
 
-        it('unauthorized', function () {
-            response.unauthorized();
-            expect(scope.authenticated).toEqual(false);
-        });
+        describe('when already signed in', function () {
+            beforeEach(function () {
+                binarta.checkpoint.registrationForm.submit({username: 'u', password: 'p'});
+                $compile(element)($rootScope.$new());
+                scope = element.scope();
+            });
 
-        it('authenticated', function () {
-            response.ok();
-            expect(scope.authenticated).toEqual(true);
-        });
-
-        it('scope is given to usecase', function () {
-            expect(response.scope).toEqual(scope);
+            it('is authenticated', function () {
+                expect(scope.authenticated).toBeTruthy();
+            });
         });
     });
 

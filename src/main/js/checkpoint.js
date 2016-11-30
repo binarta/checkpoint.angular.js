@@ -9,7 +9,7 @@ angular.module('checkpoint', ['ngRoute', 'config', 'notifications', 'angular.use
     .factory('signInWithTokenService', ['signinService', '$location', SignInWithTokenServiceFactory])
     .directive('checkpointPermission', ['ngRegisterTopicHandler', 'activeUserHasPermission', '$log', CheckpointHasDirectiveFactory])
     .directive('checkpointPermissionFor', ['binarta', CheckpointPermissionForDirectiveFactory])
-    .directive('checkpointIsAuthenticated', ['fetchAccountMetadata', CheckpointIsAuthenticatedDirectiveFactory])
+    .directive('checkpointIsAuthenticated', ['binarta', CheckpointIsAuthenticatedDirectiveFactory])
     .directive('isAuthenticated', ['fetchAccountMetadata', '$log', IsAuthenticatedDirectiveFactory])
     .directive('isUnauthenticated', ['fetchAccountMetadata', '$log', IsUnauthenticatedDirectiveFactory])
     .directive('authenticatedWithRealm', ['fetchAccountMetadata', 'topicRegistry', AuthenticatedWithRealmDirectiveFactory])
@@ -360,19 +360,26 @@ function CheckpointPermissionForDirectiveFactory(binarta) {
     };
 }
 
-function CheckpointIsAuthenticatedDirectiveFactory(fetchAccountMetadata) {
+function CheckpointIsAuthenticatedDirectiveFactory(binarta) {
     return {
         scope: true,
         link: function (scope) {
-            fetchAccountMetadata({
-                ok: function () {
-                    scope.authenticated = true
-                },
-                unauthorized: function () {
-                    scope.authenticated = false
-                },
-                scope: scope
+            var observer = binarta.checkpoint.profile.eventRegistry.observe({
+                signedin: onSignedIn,
+                signedout: onSignedOut
             });
+
+            binarta.checkpoint.profile.isAuthenticated() ? onSignedIn() : onSignedOut();
+
+            function onSignedIn() {
+                scope.authenticated = true;
+            }
+
+            function onSignedOut() {
+                scope.authenticated = false;
+            }
+
+            scope.$on('$destroy', observer.disconnect);
         }
     };
 }
