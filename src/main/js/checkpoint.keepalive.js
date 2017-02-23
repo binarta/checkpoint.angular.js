@@ -1,20 +1,24 @@
-angular.module("checkpoint.keepalive", ['checkpoint', 'config', 'notifications'])
-    .run(['$rootScope', '$timeout', '$http', '$window', 'config', 'fetchAccountMetadata', 'topicMessageDispatcher',
-        function ($rootScope, $timeout, $http, $window, config, fetchAccountMetadata, topicMessageDispatcher) {
-            var signedIn;
+angular.module("checkpoint.keepalive", ['binarta-checkpointjs-angular1', 'config', 'notifications'])
+    .run(['$timeout', '$http', 'config', 'topicMessageDispatcher', 'binarta',
+        function ($timeout, $http, config, topicMessageDispatcher, binarta) {
+            var signedIn, timeoutPromise;
 
-            fetchAccountMetadata({
-                ok: function () {
+            binarta.checkpoint.profile.eventRegistry.observe({
+                signedin: onSignedIn,
+                signedout: onSignedOut
+            });
+
+            function onSignedIn() {
+                if (!signedIn) {
                     signedIn = true;
                     keepAliveRecurring();
-                    $window.onfocus = keepAlive;
-                },
-                unauthorized: function () {
-                    signedIn = false;
-                    $window.onfocus = null;
-                },
-                scope: $rootScope
-            });
+                }
+            }
+
+            function onSignedOut() {
+                signedIn = false;
+                if (timeoutPromise) $timeout.cancel(timeoutPromise);
+            }
 
             function keepAlive(args) {
                 $http.get(config.baseUri + 'api/keepalive', {
@@ -30,8 +34,8 @@ angular.module("checkpoint.keepalive", ['checkpoint', 'config', 'notifications']
             }
 
             function keepAliveRecurring() {
-                $timeout(function () {
-                    if (signedIn) keepAlive({onSuccess: keepAliveRecurring});
+                timeoutPromise = $timeout(function () {
+                    keepAlive({onSuccess: keepAliveRecurring});
                 }, 1200000);
             }
-    }]);
+        }]);

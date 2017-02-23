@@ -1,24 +1,14 @@
 describe('checkpoint keepalive', function () {
-    var fetchAccountMetadata, config, dispatcher, keepalive, $httpBackend, $window, $timeout, waitFor;
+    var binarta, config, dispatcher, keepalive, $httpBackend, $timeout, waitFor;
 
-    beforeEach(module('notifications'));
     beforeEach(module('checkpoint.keepalive'));
 
-    beforeEach(function () {
-        module(function ($provide) {
-            $provide.service('fetchAccountMetadata', function () {
-                return jasmine.createSpy('fetchAccountMetadata');
-            })
-        });
-    });
-
-    beforeEach(inject(function ($rootScope, _config_, topicMessageDispatcherMock, _fetchAccountMetadata_, _$httpBackend_, _$window_, _$timeout_) {
-        fetchAccountMetadata = _fetchAccountMetadata_;
+    beforeEach(inject(function (_config_, topicMessageDispatcherMock, _$httpBackend_, _$timeout_, _binarta_) {
+        binarta = _binarta_;
         config = _config_;
         config.baseUri = 'base-uri/';
         dispatcher = topicMessageDispatcherMock;
         $httpBackend = _$httpBackend_;
-        $window = _$window_;
         $timeout = _$timeout_;
 
         waitFor = function (ms) {
@@ -26,25 +16,17 @@ describe('checkpoint keepalive', function () {
         };
     }));
 
-    describe('user is logged out', function () {
-        beforeEach(function () {
-            fetchAccountMetadata.calls.first().args[0].unauthorized();
-        });
-
+    describe('user is not logged in', function () {
         it('nothing should happen', function () {
             $timeout.verifyNoPendingTasks();
             $httpBackend.verifyNoOutstandingExpectation();
             $httpBackend.verifyNoOutstandingRequest();
         });
-
-        it('no focus event on window', function () {
-            expect($window.onfocus).toEqual(null);
-        });
     });
 
     describe('when user is logged in', function () {
         beforeEach(function () {
-            fetchAccountMetadata.calls.first().args[0].ok();
+            binarta.checkpoint.registrationForm.submit({username: 'u', password: 'p'});
         });
 
         afterEach(function () {
@@ -56,7 +38,6 @@ describe('checkpoint keepalive', function () {
             waitFor(1199999);
             expect($httpBackend.flush).toThrow();
         });
-
 
         it('keepalive is called', function () {
             $httpBackend.expectGET('base-uri/api/keepalive').respond(200);
@@ -78,12 +59,6 @@ describe('checkpoint keepalive', function () {
             $httpBackend.flush(1);
         });
 
-        it('on window focus', function () {
-            $httpBackend.expectGET('base-uri/api/keepalive').respond(200);
-            $window.onfocus();
-            $httpBackend.flush(1);
-        });
-
         describe('when keepalive is unauthorized', function () {
             beforeEach(function () {
                 $httpBackend.expectGET('base-uri/api/keepalive').respond(401);
@@ -101,7 +76,7 @@ describe('checkpoint keepalive', function () {
 
         describe('user logs out', function () {
             beforeEach(function () {
-                fetchAccountMetadata.calls.first().args[0].unauthorized();
+                binarta.checkpoint.profile.signout();
             });
 
             it('no more keepalives', function () {
