@@ -1,4 +1,4 @@
-angular.module('checkpoint', ['ngRoute', 'config', 'notifications', 'angular.usecase.adapter', 'rest.client', 'ui.bootstrap.modal', 'binarta-checkpointjs-angular1'])
+angular.module('checkpoint', ['ngRoute', 'config', 'notifications', 'angular.usecase.adapter', 'rest.client', 'binarta-checkpointjs-angular1'])
     .service('account', ['binarta', '$log', '$http', '$q', 'config', 'topicRegistry', 'authRequiredPresenter', AccountService])
     .factory('fetchAccountMetadata', ['account', 'ngRegisterTopicHandler', '$log', FetchAccountMetadata])
     .factory('activeUserHasPermission', ['account', 'ngRegisterTopicHandler', '$log', ActiveUserHasPermission])
@@ -13,7 +13,6 @@ angular.module('checkpoint', ['ngRoute', 'config', 'notifications', 'angular.use
     .directive('isAuthenticated', ['fetchAccountMetadata', '$log', IsAuthenticatedDirectiveFactory])
     .directive('isUnauthenticated', ['fetchAccountMetadata', '$log', IsUnauthenticatedDirectiveFactory])
     .directive('authenticatedWithRealm', ['fetchAccountMetadata', 'topicRegistry', AuthenticatedWithRealmDirectiveFactory])
-    .directive('loginModal', ['config', '$modal', LoginModalDirectiveFactory])
     .controller('SigninController', ['$scope', '$location', 'config', 'signinService', 'account', 'binarta', SigninController])
     .controller('AccountMetadataController', ['$scope', 'binarta', AccountMetadataController])
     .controller('RegistrationController', ['$scope', 'config', '$location', 'topicMessageDispatcher', 'binarta', RegistrationController])
@@ -524,24 +523,6 @@ function AuthRequiredPresenterFactory(config, $location, $routeParams) {
             $location.path(pathToSignin);
         }
     }
-}
-
-function LoginModalDirectiveFactory(config, $modal) {
-    return {
-        restrict: 'A',
-        scope: true,
-        link: function (scope) {
-            scope.open = function () {
-                var componentsDir = config.componentsDir || 'bower_components';
-                var styling = config.styling ? config.styling + '/' : '';
-
-                $modal.open({
-                    templateUrl: componentsDir + '/binarta.checkpoint.angular/template/' + styling + 'login-modal.html',
-                    backdrop: 'static'
-                });
-            };
-        }
-    };
 }
 
 function WelcomeMessageController($location, $rootScope) {
