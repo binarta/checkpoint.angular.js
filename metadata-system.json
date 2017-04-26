@@ -122,15 +122,15 @@
       "checkpoint.recover.password.mail.salutation": "Cher(e)",
       "checkpoint.recover.password.mail.message": "Nous avons reçu une demande de récupération de votre mot de passe. Si vous n'êtes pas à l'origine de cette action, vous pouvez ignorer le présent e-mail. Si vous soupçonnez un usage frauduleux, forwardez cet e-mail vers <a href=\"mailto:support@binarta.com\">support@binarta.com</a>.",
       "checkpoint.recover.password.mail.recover.link": "Cliquez ici pour récupérer votre mot de passe",
-      "checkpoint.welcome.message.title": "Welcome",
-      "checkpoint.welcome.message.body": "Log in again with your Binarta account to start customizing your website.",
+      "checkpoint.welcome.message.title": "Bienvenue",
+      "checkpoint.welcome.message.body": "Connectez-vous à nouveau avec votre compte Binarta pour commencer à personnaliser votre site.",
       "checkpoint.register.title": "Enregistrer",
-      "checkpoint.i.represent.a.company": "I represent a company",
+      "checkpoint.i.represent.a.company": "Je représente une entreprise",
       "checkpoint.register.submit": "Enregistrer",
       "checkpoint.vat.label": "TVA",
       "checkpoint.vat.help": "Votre numéro de TVA doit commencer par 2 lettres, par exemple: BE123456789",
       "checkpoint.register.terms.agreement": "En cliquant sur enregistrer, j'accepte les conditions d’utilisation",
-      "checkpoint.session.expired": "Your session has expired. Please copy any unsaved changes before logging back in."
+      "checkpoint.session.expired": "Votre session a expiré. Copier les modifications non enregistrées avant de vous reconnecter."
     },
     "de":{
       "checkpoint.username.email.label": "Benutzername / E-Mail",
