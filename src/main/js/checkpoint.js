@@ -480,6 +480,9 @@ function RegistrationRequestMessageMapperFactory(config, registrationRequestMess
 function RegistrationController($scope, config, $location, topicMessageDispatcher, binarta) {
     var self = this;
 
+    $scope.recaptchaPublicKey = config.recaptchaPublicKey;
+    self.recaptchaPublicKey = config.recaptchaPublicKey;
+
     $scope.register = function () {
         register($scope);
     };

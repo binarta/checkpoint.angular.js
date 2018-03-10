@@ -1032,6 +1032,7 @@ describe('checkpoint', function () {
 
     describe('RegistrationController', function () {
         beforeEach(inject(function ($controller) {
+            config.recaptchaPublicKey = 'recaptcha-public-key';
             ctrl = $controller(RegistrationController, {$scope: scope});
             config.namespace = 'namespace';
         }));
@@ -1045,6 +1046,10 @@ describe('checkpoint', function () {
                 beforeEach(function () {
                     if (context == 'scope') ctx = scope;
                     if (context == 'controller') ctx = ctrl;
+                });
+
+                it('should expose the recaptcha public key', function() {
+                    expect(ctx.recaptchaPublicKey).toEqual(config.recaptchaPublicKey);
                 });
 
                 describe('with invalid data', function () {
